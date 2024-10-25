@@ -4,8 +4,8 @@
 
 void LineSensor::Initialize(void)
 {
-    pinMode(leftSensorPin, INPUT);
-    pinMode(rightSensorPin, INPUT);
+    pinMode(A0, INPUT);
+    pinMode(A4, INPUT);
 }
 
 int16_t LineSensor::CalcError(void) 
@@ -26,5 +26,5 @@ bool LineSensor::CheckIntersection(void)
 
     prevOnIntersection = onIntersection;
 
-    return retVal;
+    return false;
 }
