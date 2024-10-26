@@ -8,9 +8,9 @@ void LineSensor::Initialize(void)
     pinMode(A4, INPUT);
 }
 
-int16_t LineSensor::CalcError(void) 
+float LineSensor::CalcError(void) 
 { 
-    return analogRead(rightSensorPin) - analogRead(leftSensorPin); 
+    return (analogRead(leftSensorPin) - analogRead(rightSensorPin)) / 1023.0; 
 }
     
 

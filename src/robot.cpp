@@ -99,14 +99,14 @@ void Robot::EnterLineFollowing(float speed)
 
 void Robot::LineFollowingUpdate(void)
 {
-    float Kp = 0.005;
+    float Kp = 0.75;
     if(robotState == ROBOT_LINING) 
     {
         // TODO: calculate the error in CalcError(), calc the effort, and update the motion
-        int16_t lineError = lineSensor.CalcError();
+        float lineError = lineSensor.CalcError();
         float turnEffort = Kp * lineError;
 
-        chassis.SetTwist(baseSpeed, turnEffort);
+        chassis.SetTwist(baseSpeed / lineError, turnEffort);
     }
 }
 
