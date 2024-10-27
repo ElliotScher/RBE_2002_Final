@@ -16,6 +16,9 @@ protected:
 public:
     LineSensor(void) {}
     void Initialize(void);
-    float CalcError(void);
     bool CheckIntersection(void);
+    float CalcError(void);
+    int16_t CalcEffort(void);
+    void setKp(float kp);
+    void setKd(float kd);
 };

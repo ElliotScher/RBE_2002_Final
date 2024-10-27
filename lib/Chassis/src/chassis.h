@@ -11,8 +11,8 @@ protected:
      * tune them.
      */
     const float ROBOT_RADIUS = 14.7 / 2;
-    const float LEFT_TICKS_PER_CM = 1440.0 / (3.1416 * 4.0);
-    const float RIGHT_TICKS_PER_CM = 1440.0 / (3.1416 * 4.0);
+    const float LEFT_CM_PER_SEC_TO_TICKS_PER_INTERVAL = (1.0 / (3.1416 * 7.0)) * (12.0 * (3952.0 / 33.0)) * (20.0 / 1000.0);
+    const float RIGHT_CM_PER_SEC_TO_TICKS_PER_INTERVAL = (1.0 / (3.1416 * 7.0)) * (12.0 * (3952.0 / 33.0)) * (20.0 / 1000.0);
 
     /**
      * You can change the control loop period, but you should use multiples of 4 ms to 

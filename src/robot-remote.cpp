@@ -76,7 +76,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
         switch(keyCode)
         {
             case UP_ARROW:
-                chassis.SetTwist(5, 0);
+                chassis.SetTwist(25, 0);
                 break;
             case RIGHT_ARROW:
                 chassis.SetTwist(0, -0.25);
@@ -120,7 +120,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 keyString = "";
                 break;
             case UP_ARROW:
-                if(!keyString.length()) chassis.SetWheelSpeeds(20, 20);
+                if(!keyString.length()) chassis.SetWheelSpeeds(60, 60);
                 break;
             case DOWN_ARROW:
                 if(!keyString.length()) chassis.SetWheelSpeeds(20, 20);

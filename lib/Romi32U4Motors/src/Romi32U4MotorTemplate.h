@@ -25,9 +25,9 @@ protected:
     volatile CTRL_MODE ctrlMode = CTRL_DIRECT;
 
     // TODO: After you tune your motors, set the gains here.
-    float Kp = 10;
+    float Kp = 7.5;
     float Ki = 0.1;
-    float Kd = 0;
+    float Kd = 0.1;
 
     // Used to keep track of the target speed, in counts / interval.
     float targetSpeed = 0;
@@ -125,7 +125,7 @@ protected:
             // Calculate the error in speed
             float error = targetSpeed - speed;
 
-            sumError+=error*20;
+            sumError+=error * 20.0;
             
             derivativeError = error - prevError;
 
@@ -137,13 +137,11 @@ protected:
 
             if(debug)
             {            
+                Serial.print(">Velocity Setpoint - Ticks/Interval (20 ms):");
                 Serial.print(targetSpeed);
-                Serial.print('\t');
+                Serial.print('\n');
+                Serial.print(">Velocity - Ticks/Interval (20 ms):");
                 Serial.print(speed);
-                Serial.print('\t');
-                Serial.print(error);
-                Serial.print('\t');
-                Serial.print(effort / 10.0); // N.B. that we divide by 10 to make the graph cleaner
                 Serial.print('\n');
             }
             prevError = error;

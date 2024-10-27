@@ -117,8 +117,8 @@ void Chassis::UpdateMotors(void)
 void Chassis::SetWheelSpeeds(float leftSpeedCMperSec, float rightSpeedCMperSec)
 {
     // TODO: WRONG - MAYBE OFF BY 3.14?
-    leftSpeedCMperSec = (leftSpeedCMperSec * LEFT_TICKS_PER_CM) / (1000.0 / CONTROL_LOOP_PERIOD_MS);
-    rightSpeedCMperSec = (rightSpeedCMperSec * RIGHT_TICKS_PER_CM) / (1000.0 / CONTROL_LOOP_PERIOD_MS);
+    leftSpeedCMperSec *= LEFT_CM_PER_SEC_TO_TICKS_PER_INTERVAL;
+    rightSpeedCMperSec *= RIGHT_CM_PER_SEC_TO_TICKS_PER_INTERVAL;
     leftMotor.SetTargetSpeed(leftSpeedCMperSec);
     rightMotor.SetTargetSpeed(rightSpeedCMperSec);
 }
