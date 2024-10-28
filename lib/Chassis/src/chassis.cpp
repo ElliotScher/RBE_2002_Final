@@ -119,8 +119,12 @@ void Chassis::SetWheelSpeeds(float leftSpeedCMperSec, float rightSpeedCMperSec)
     /** 
      * TODO: Add code to convert cm/sec -> encoder ticks/control interval
      */
-    leftMotor.SetTargetSpeed(leftSpeedCMperSec);
-    rightMotor.SetTargetSpeed(rightSpeedCMperSec);
+    
+    float leftEncoderTicksPerInterval = leftSpeedCMperSec*LEFT_TICKS_PER_CM*CONTROL_LOOP_PERIOD_MS*0.001;
+    float rightEncoderTicksPerInterval = rightSpeedCMperSec*RIGHT_TICKS_PER_CM*CONTROL_LOOP_PERIOD_MS*0.001;
+
+    leftMotor.SetTargetSpeed(leftEncoderTicksPerInterval);
+    rightMotor.SetTargetSpeed(rightEncoderTicksPerInterval);
 }
 
 /**

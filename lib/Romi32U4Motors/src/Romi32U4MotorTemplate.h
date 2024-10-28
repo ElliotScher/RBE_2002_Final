@@ -25,12 +25,12 @@ protected:
     volatile CTRL_MODE ctrlMode = CTRL_DIRECT;
 
     // TODO: After you tune your motors, set the gains here.
-    float Kp = 1;
-    float Ki = 0;
-    float Kd = 0;
+    float Kp = 3;
+    float Ki = 1.5;
+    float Kd = 5;
 
     // Used to keep track of the target speed, in counts / interval.
-    float targetSpeed = 0;
+    float targetSpeed;
 
     /**
      * This is the speed of the motor, in "encoder counts / encoder interval".
@@ -112,6 +112,8 @@ protected:
      * ControlMotorSpeed implements the PID controller. It should _not_ be called by user code.
      * Instead, ControlMotorSpeed is called from Chassis::UpdateMotors, which is on a timer schedule.
     */
+
+
     void ControlMotorSpeed(bool debug = false)
     {
         if(ctrlMode == CTRL_SPEED)
@@ -121,23 +123,42 @@ protected:
              */
             // Calculate the error in speed
             float error = targetSpeed - speed;
+            sumError += error;
+            sumError = (sumError > 200) ? 200 : sumError;
+            sumError = (sumError < -200) ? -200 : sumError;
 
             // Calculate the effort from the PID gains
-            int16_t effort = Kp * error;
+            int16_t effort = Kp * error + Ki * sumError;
 
             // Set the effort for the motor
             SetEffort(effort);
 
+            // Teleplot output for target speed
+            Serial.print(">targetSpeed:");
+            Serial.println(targetSpeed);
+
+            // Teleplot output for current speed
+            Serial.print(">currentSpeed:");
+            Serial.println(speed);
+
+            // Teleplot output for error
+            Serial.print(">error:");
+            Serial.println(error);
+
+            // Teleplot output for effort (divided by 10 to make the graph cleaner)
+            Serial.print(">effort:");
+            Serial.println(effort / 10.0);
+
             if(debug)
             {            
-                Serial.print(targetSpeed);
-                Serial.print('\t');
-                Serial.print(speed);
-                Serial.print('\t');
-                Serial.print(error);
-                Serial.print('\t');
-                Serial.print(effort / 10.0); // N.B. that we divide by 10 to make the graph cleaner
-                Serial.print('\n');
+                // Serial.print(targetSpeed);
+                // Serial.print('\t');
+                // Serial.print(speed);
+                // Serial.print('\t');
+                // Serial.print(error);
+                // Serial.print('\t');
+                // Serial.print(effort / 10.0); // N.B. that we divide by 10 to make the graph cleaner
+                // Serial.print('\n');
             }
         }    
     }

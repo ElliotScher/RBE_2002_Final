@@ -2,14 +2,23 @@
 
 #include <Arduino.h>
 
-#define LEFT_LINE_SENSOR A0
-#define RIGHT_LINE_SENSOR A4
+//from left to right
+#define LINE_SENSOR1 A5
+#define LINE_SENSOR2 A4
+#define LINE_SENSOR3 A3
+#define LINE_SENSOR4 A2
+#define LINE_SENSOR5 A1
+#define LINE_SENSOR6 A0
 
 class LineSensor
 {
 protected:
-    uint8_t leftSensorPin = LEFT_LINE_SENSOR;
-    uint8_t rightSensorPin = RIGHT_LINE_SENSOR;
+    uint8_t lineSenor1Pin = LINE_SENSOR1;
+    uint8_t lineSenor2Pin = LINE_SENSOR2;
+    uint8_t lineSenor3Pin = LINE_SENSOR3;
+    uint8_t lineSenor4Pin = LINE_SENSOR4;
+    uint8_t lineSenor5Pin = LINE_SENSOR5;
+    uint8_t lineSenor6Pin = LINE_SENSOR6;
 
     bool prevOnIntersection = false;
 

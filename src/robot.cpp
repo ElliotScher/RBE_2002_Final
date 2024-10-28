@@ -97,13 +97,19 @@ void Robot::EnterLineFollowing(float speed)
     robotState = ROBOT_LINING;
 }
 
+float KpLine = 0.0002;
+float KdLine = 0.0001;
+float prevLineError;
+
 void Robot::LineFollowingUpdate(void)
 {
     if(robotState == ROBOT_LINING) 
     {
         // TODO: calculate the error in CalcError(), calc the effort, and update the motion
         int16_t lineError = lineSensor.CalcError();
-        float turnEffort = 0;
+        float deltaLineError = lineError - prevLineError;
+        float turnEffort = KpLine*lineError + KdLine*deltaLineError;
+        prevLineError = lineError;
 
         chassis.SetTwist(baseSpeed, turnEffort);
     }
@@ -200,8 +206,8 @@ void Robot::RobotLoop(void)
     /**
      * Check for any intersections
      */
-    if(lineSensor.CheckIntersection()) HandleIntersection();
-    if(CheckTurnComplete()) HandleTurnComplete();
+    //if(lineSensor.CheckIntersection()) HandleIntersection();
+    //if(CheckTurnComplete()) HandleTurnComplete();
 
     /**
      * Check for an IMU update
