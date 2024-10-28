@@ -12,10 +12,12 @@ void LineSensor::Initialize(void)
     pinMode(lineSenor6Pin, INPUT);
 }
 
+float lineSensorWeight = 3.0;
+
 int16_t LineSensor::CalcError(void) 
 { 
     //0 is center of sensor on center of line
-    return 3*analogRead(lineSenor1Pin) + analogRead(lineSenor2Pin) + analogRead(lineSenor3Pin) - analogRead(lineSenor4Pin) - analogRead(lineSenor5Pin) - 3*analogRead(lineSenor6Pin);
+    return lineSensorWeight*analogRead(lineSenor1Pin) + analogRead(lineSenor2Pin) + analogRead(lineSenor3Pin) - analogRead(lineSenor4Pin) - analogRead(lineSenor5Pin) - lineSensorWeight*analogRead(lineSenor6Pin);
 }
     
 

@@ -97,8 +97,8 @@ void Robot::EnterLineFollowing(float speed)
     robotState = ROBOT_LINING;
 }
 
-float KpLine = 0.0002;
-float KdLine = 0.0001;
+float KpLine = 0.002;
+float KdLine = 0.0008;
 float prevLineError;
 
 void Robot::LineFollowingUpdate(void)

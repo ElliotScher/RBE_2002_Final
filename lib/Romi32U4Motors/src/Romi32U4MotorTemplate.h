@@ -25,9 +25,9 @@ protected:
     volatile CTRL_MODE ctrlMode = CTRL_DIRECT;
 
     // TODO: After you tune your motors, set the gains here.
-    float Kp = 3;
-    float Ki = 1.5;
-    float Kd = 5;
+    float Kp = 3.8;
+    float Ki = 0.85;
+    float Kd = 0.01;
 
     // Used to keep track of the target speed, in counts / interval.
     float targetSpeed;
@@ -124,11 +124,12 @@ protected:
             // Calculate the error in speed
             float error = targetSpeed - speed;
             sumError += error;
-            sumError = (sumError > 200) ? 200 : sumError;
-            sumError = (sumError < -200) ? -200 : sumError;
+            sumError = (sumError > 350) ? 350 : sumError;
+            sumError = (sumError < -350) ? -350 : sumError;
 
             // Calculate the effort from the PID gains
-            int16_t effort = Kp * error + Ki * sumError;
+            int16_t effort = Kp * error + Ki * sumError + Kd*(error-prevError);
+            prevError = error;
 
             // Set the effort for the motor
             SetEffort(effort);
