@@ -70,9 +70,7 @@ void Robot::HandleTurnComplete(void)
  */
 void Robot::HandleOrientationUpdate(void)
 {
-    imu.read();
-    currentTime = millis();
-    float deltaTime = (currentTime - prevTime) * 0.001;
+    prevEulerAngles = eulerAngles;
     if(robotState == ROBOT_IDLE)
     {
         // TODO: You'll need to add code to LSM6 to update the bias
@@ -80,10 +78,9 @@ void Robot::HandleOrientationUpdate(void)
     }
     else // update orientation
     {
-        eulerAngles.z += (imu.g.z * deltaTime);
+        eulerAngles.z += imu.g.z * (1.0 / imu.SIGMA) * (1.0 / imu.gyroODR);
     }
     prevTime = currentTime;
-    prevEulerAngles = eulerAngles;
 
 #ifdef __IMU_DEBUG__
     Serial.println(eulerAngles.z);
