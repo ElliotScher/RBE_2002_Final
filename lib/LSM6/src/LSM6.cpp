@@ -29,7 +29,7 @@ LSM6::LSM6(void)
 bool LSM6::checkForNewData(void)
 {
   bool retVal = false;
-  if(getStatus() & 0x01)
+  if(getStatus() & LSM6::OUTZ_H_G)
   {
     read();
 
