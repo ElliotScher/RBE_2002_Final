@@ -25,7 +25,7 @@ bool LineSensor::CheckIntersection(void)
 
     prevOnIntersection = onIntersection;
 
-    return false;
+    return retVal;
 }
 
 float LineSensor::CalcError(void) 

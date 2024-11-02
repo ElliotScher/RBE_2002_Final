@@ -108,7 +108,7 @@ class LSM6
     vector<int16_t> a; // accelerometer readings
     vector<int16_t> g; // gyro readings
 
-    const float SIGMA = 0.95; // for updating bias
+    const float SIGMA = 0.775; // for updating bias
 
 public:
     LSM6(void);
@@ -141,10 +141,8 @@ public:
 
     vector<float> updateGyroBias(void) 
     {
-      /**
-       * TODO: add a low-pass filter to update the bias
-       */
-      
+      gyroBias.z = (SIGMA * previousGyroBias.z) + ((1 - SIGMA) * g.z);
+      previousGyroBias.z = gyroBias.z;
       return gyroBias;
     }
 
@@ -169,6 +167,7 @@ public:
     // float estimatedPitchAngle = 0;
     // vector<float> eulerAngles;
     vector<float> gyroBias;
+    vector<float> previousGyroBias;
 
     /* We make Robot a friend to avoid all the setters and getters. */
     friend class Robot;

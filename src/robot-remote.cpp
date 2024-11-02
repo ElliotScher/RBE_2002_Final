@@ -44,7 +44,8 @@ void Robot::HandleKeyCode(int16_t keyCode)
         switch(keyCode)
         {
             case REWIND:
-                EnterLineFollowing(keyString.toInt());
+                // EnterLineFollowing(keyString.toInt());
+                EnterTurn(180.0);
                 keyString = "";
                 break;
             case NUM_1:
@@ -64,6 +65,21 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 break;
             case NUM_0_10:
                 keyString += '0';
+                break;
+            case UP_ARROW:
+                EnterTurn(0.0);
+                break;
+            case RIGHT_ARROW:
+                EnterTurn(-90.0);
+                break;
+            case DOWN_ARROW:
+                EnterTurn(180.0);
+                break;
+            case LEFT_ARROW:
+                EnterTurn(90.0);
+                break;
+            case ENTER_SAVE:
+                chassis.SetTwist(0, 0);
                 break;
         }
     }

@@ -15,10 +15,8 @@ void Robot::InitializeRobot(void)
      * Initialize the IMU and set the rate and scale to reasonable values.
      */
     imu.init();
-
-    /**
-     * TODO: Add code to set the data rate and scale of IMU (or edit LSM6::setDefaults())
-     */
+    imu.setGyroDataOutputRate(LSM6::ODR13);
+    imu.setFullScaleGyro(LSM6::GYRO_FS500);
 
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
@@ -39,28 +37,36 @@ void Robot::EnterTurn(float angleInDeg)
 {
     Serial.println(" -> TURN");
     robotState = ROBOT_TURNING;
+    targetDirection = angleInDeg;
 
-    /**
-     * TODO: Add code to initiate the turn and set the target
-     */
+    float effort = 1.0;
+
+    if ((targetDirection - eulerAngles.z) < 0.0) {
+        effort = -1.0;
+    }
+
+    chassis.SetTwist(0, effort);
+    Serial.print("Effort: ");
+    Serial.println(effort);
 }
 
 bool Robot::CheckTurnComplete(void)
 {
     bool retVal = false;
 
-    /**
-     * TODO: add a checker to detect when the turn is complete
-     */
-
+    if (robotState == ROBOT_TURNING) {
+        if (abs(targetDirection - eulerAngles.z) < 5.0) {
+            retVal = true;
+        }
+    }
+    
     return retVal;
 }
 
 void Robot::HandleTurnComplete(void)
 {
-    /**
-     * TODO: Add code to handle the completed turn
-     */
+    chassis.SetTwist(0, 0);
+    robotState = ROBOT_IDLE;
 }
 
 /**
@@ -78,12 +84,20 @@ void Robot::HandleOrientationUpdate(void)
     }
     else // update orientation
     {
-        eulerAngles.z += imu.g.z * (1.0 / imu.SIGMA) * (1.0 / imu.gyroODR);
+        eulerAngles.z += (LSM6::CTRL2_G * (imu.g.z - imu.gyroBias.z) * (1.0 / imu.gyroODR)) / 1000.0;
+
+        if (eulerAngles.z > 180.0) {
+            eulerAngles.z -= 360.0;
+        }
+        if (eulerAngles.z < -180.0) {
+            eulerAngles.z += 360.0;
+        }
     }
-    prevTime = currentTime;
 
 #ifdef __IMU_DEBUG__
-    Serial.println(eulerAngles.z);
+    Serial.print(">Yaw: ");
+    Serial.print(eulerAngles.z);
+    Serial.println("\n");
 #endif
 }
 

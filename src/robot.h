@@ -49,9 +49,6 @@ protected:
     LSM6::vector<float> prevEulerAngles;
     LSM6::vector<float> eulerAngles;
 
-    float currentTime = millis();
-    float prevTime = millis();
-
     /* targetHeading is used for commanding the robot to turn */
     float targetHeading;
 
@@ -69,6 +66,13 @@ protected:
     enum INTERSECTION {NODE_START, NODE_1, NODE_2, NODE_3,};
     INTERSECTION nodeFrom = NODE_START;
     INTERSECTION nodeTo = NODE_1;
+
+    int8_t currentDirection = 0;
+    int8_t targetDirection = 0;
+    uint8_t iGrid = 0, jGrid = 0;
+    uint8_t iTarget = 0, jTarget = 0;
+    uint8_t direction = 1;
+
     
 public:
     Robot(void) {keyString.reserve(8);} //reserve some memory to avoid reallocation
