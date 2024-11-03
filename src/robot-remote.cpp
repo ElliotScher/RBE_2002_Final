@@ -30,7 +30,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
     }
 
     // If PLAY is pressed, it toggles control mode (setup -> teleop)
-    else if(keyCode == PLAY_PAUSE) 
+    else if(keyCode == PLAY_PAUSE)
     {
         if(robotCtrlMode == CTRL_AUTO) {EnterTeleopMode(); EnterIdleState();}
         else if(robotCtrlMode == CTRL_TELEOP) {EnterAutoMode(); EnterIdleState();}
@@ -44,8 +44,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
         switch(keyCode)
         {
             case REWIND:
-                // EnterLineFollowing(keyString.toInt());
-                EnterTurn(180.0);
+                EnterLineFollowing(keyString.toInt());
                 keyString = "";
                 break;
             case NUM_1:

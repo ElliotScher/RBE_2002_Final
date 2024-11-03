@@ -67,11 +67,9 @@ protected:
     INTERSECTION nodeFrom = NODE_START;
     INTERSECTION nodeTo = NODE_1;
 
-    int8_t currentDirection = 0;
-    int8_t targetDirection = 0;
+    float targetDirection = 0;
     uint8_t iGrid = 0, jGrid = 0;
     uint8_t iTarget = 0, jTarget = 0;
-    uint8_t direction = 1;
 
     
 public:

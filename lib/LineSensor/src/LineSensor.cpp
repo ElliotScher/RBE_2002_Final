@@ -2,7 +2,7 @@
 
 #define DARK_THRESHOLD 500;
 
-float kp = 0.005;
+float kp = 0.0005;
 float kd = 0.005;
 
 int16_t prevError = 0;

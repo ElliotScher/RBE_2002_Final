@@ -39,23 +39,31 @@ void Robot::EnterTurn(float angleInDeg)
     robotState = ROBOT_TURNING;
     targetDirection = angleInDeg;
 
-    float effort = 1.0;
+    float angleDifference = targetDirection - eulerAngles.z;
 
-    if ((targetDirection - eulerAngles.z) < 0.0) {
-        effort = -1.0;
+    // Normalize angleDifference to the range [-180, 180]
+    if (angleDifference > 180.0) {
+        angleDifference -= 360.0;
+    } else if (angleDifference < -180.0) {
+        angleDifference += 360.0;
     }
 
-    chassis.SetTwist(0, effort);
-    Serial.print("Effort: ");
-    Serial.println(effort);
+    // Turn left or right based on the shortest path
+    if (angleDifference < 0) {
+        chassis.SetTwist(0, -1.0); // Turn left
+    } else if (angleDifference > 0) {
+        chassis.SetTwist(0, 1.0);  // Turn right
+    }
 }
 
 bool Robot::CheckTurnComplete(void)
 {
     bool retVal = false;
 
+    float error = abs(targetDirection - eulerAngles.z);
+
     if (robotState == ROBOT_TURNING) {
-        if (abs(targetDirection - eulerAngles.z) < 5.0) {
+        if (error < 5.0) {
             retVal = true;
         }
     }
@@ -66,7 +74,7 @@ bool Robot::CheckTurnComplete(void)
 void Robot::HandleTurnComplete(void)
 {
     chassis.SetTwist(0, 0);
-    robotState = ROBOT_IDLE;
+    robotState = ROBOT_LINING;
 }
 
 /**
@@ -115,7 +123,6 @@ void Robot::LineFollowingUpdate(void)
 {
     if(robotState == ROBOT_LINING) 
     {
-
         chassis.SetTwist(baseSpeed, lineSensor.CalcEffort());
     }
 }
@@ -126,6 +133,16 @@ void Robot::LineFollowingUpdate(void)
  */
 void Robot::HandleIntersection(void)
 {
+    float angle = eulerAngles.z;
+    if (angle >= -45 && angle <= 45) {
+        iGrid++;  // Facing "north," increment j
+    } else if (angle > 45 && angle < 135) {
+        jGrid++;  // Facing "east," increment i
+    } else if ((angle >= 135 && angle <= 180) || (angle <= -135 && angle >= -180)) {
+        iGrid--;  // Facing "south," decrement j
+    } else if (angle > -135 && angle < -45) {
+        jGrid--;  // Facing "west," decrement i
+    }
     Serial.print("X: ");
     if(robotState == ROBOT_LINING) 
     {
