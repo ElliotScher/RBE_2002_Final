@@ -66,7 +66,8 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 keyString += '0';
                 break;
             case UP_ARROW:
-                EnterTurn(0.0);
+                // EnterTurn(0.0);
+                jTarget++;
                 break;
             case RIGHT_ARROW:
                 EnterTurn(-90.0);

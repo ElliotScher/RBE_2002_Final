@@ -136,62 +136,29 @@ void Robot::HandleIntersection(void)
     float angle = eulerAngles.z;
     if (angle >= -45 && angle <= 45) {
         jGrid++;  // Facing "north," increment j
+        direction = NORTH;
     } else if (angle > 45 && angle < 135) {
         iGrid++;  // Facing "east," increment i
+        direction = EAST;
     } else if ((angle >= 135 && angle <= 180) || (angle <= -135 && angle >= -180)) {
         jGrid--;  // Facing "south," decrement j
+        direction = SOUTH;
     } else if (angle > -135 && angle < -45) {
         iGrid--;  // Facing "west," decrement i
+        direction = WEST;
     }
-    Serial.print("X: ");
-    if(robotState == ROBOT_LINING) 
-    {
-        switch(nodeTo)
-        {
-            case NODE_START:
-                if(nodeFrom == NODE_1)
-                    EnterIdleState();
-                break;
-            case NODE_1:
-                // By default, we'll continue on straight
-                if(nodeFrom == NODE_START) 
-                {
-                    nodeTo = NODE_2;
-                }
-                else if(nodeFrom == NODE_2)
-                {
-                    nodeTo = NODE_START;
-                }
-                nodeFrom = NODE_1;
-                break;
-            case NODE_2:
-                // By default, we'll continue on straight
-                if(nodeFrom == NODE_1) 
-                {
-                    nodeTo = NODE_3;
-                }
-                else if(nodeFrom == NODE_3)
-                {
-                    nodeTo = NODE_1;
-                }
-                nodeFrom = NODE_2;
-                break;
-            case NODE_3:
-                // By default, we'll bang a u-ey
-                if(nodeFrom == NODE_2) 
-                {
-                    nodeTo = NODE_2;
-                    nodeFrom = NODE_3;
-                    EnterTurn(180);
-                }
-                break;
-            default:
-                break;
-        }
-        Serial.print(nodeFrom);
-        Serial.print("->");
-        Serial.print(nodeTo);
-        Serial.print('\n');
+
+    if (jGrid < jTarget && direction == NORTH) {
+        EnterLineFollowing(10);
+    } else if (jGrid == jTarget && direction == NORTH) {
+        EnterTurn(180);
+    } else if (jGrid == jTarget && direction == SOUTH) {
+        EnterLineFollowing(10);
+    } else if (jGrid > 0 && direction == SOUTH) {
+        EnterLineFollowing(10);
+    } else if (jGrid == 0) {
+        chassis.Stop();
+        robotState = ROBOT_IDLE;
     }
 }
 
