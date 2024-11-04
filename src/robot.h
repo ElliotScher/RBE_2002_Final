@@ -57,7 +57,7 @@ protected:
 
     /* previous line following error*/
     float prevLineError = 0;
-    
+
     /**
      * For tracking the motion of the Romi. We keep track of the intersection we came
      * from and the one we're headed to. You'll program in the map in handleIntersection()
@@ -70,7 +70,6 @@ protected:
     float targetDirection = 0;
     uint8_t iGrid = 0, jGrid = 0;
     uint8_t iTarget = 0, jTarget = 0;
-
     
 public:
     Robot(void) {keyString.reserve(8);} //reserve some memory to avoid reallocation

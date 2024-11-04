@@ -1,6 +1,6 @@
 #include "LineSensor.h"
 
-#define DARK_THRESHOLD 500;
+#define DARK_THRESHOLD 100;
 
 float kp = 0.0005;
 float kd = 0.005;
@@ -17,13 +17,17 @@ bool LineSensor::CheckIntersection(void)
 {
     bool retVal = false;
 
-    bool isLeftDark = analogRead(leftSensorPin) > DARK_THRESHOLD;
-    bool isRightDark = analogRead(rightSensorPin) > DARK_THRESHOLD;
+    bool isLeftDark = analogRead(leftSensorPin) < DARK_THRESHOLD;
+    bool isRightDark = analogRead(rightSensorPin) < DARK_THRESHOLD;
 
     bool onIntersection = isLeftDark && isRightDark;
     if(onIntersection && !prevOnIntersection) retVal = true;
 
     prevOnIntersection = onIntersection;
+
+    if (retVal) {
+        Serial.println("Intersection detected!");
+    }
 
     return retVal;
 }
@@ -36,7 +40,7 @@ float LineSensor::CalcError(void)
 int16_t LineSensor::CalcEffort(void) {
     int16_t effort = (kp * CalcError()) + (kd * (CalcError() - prevError));
     prevError = CalcError();
-    return effort;
+    return -effort;
 }
 
 void LineSensor::setKp(float newKp) {

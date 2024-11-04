@@ -135,13 +135,13 @@ void Robot::HandleIntersection(void)
 {
     float angle = eulerAngles.z;
     if (angle >= -45 && angle <= 45) {
-        iGrid++;  // Facing "north," increment j
+        jGrid++;  // Facing "north," increment j
     } else if (angle > 45 && angle < 135) {
-        jGrid++;  // Facing "east," increment i
+        iGrid++;  // Facing "east," increment i
     } else if ((angle >= 135 && angle <= 180) || (angle <= -135 && angle >= -180)) {
-        iGrid--;  // Facing "south," decrement j
+        jGrid--;  // Facing "south," decrement j
     } else if (angle > -135 && angle < -45) {
-        jGrid--;  // Facing "west," decrement i
+        iGrid--;  // Facing "west," decrement i
     }
     Serial.print("X: ");
     if(robotState == ROBOT_LINING) 
