@@ -135,20 +135,20 @@ protected:
             SetEffort(effort);
 
             // Teleplot output for target speed
-            Serial.print(">targetSpeed:");
-            Serial.println(targetSpeed);
+            // Serial.print(">targetSpeed:");
+            // Serial.println(targetSpeed);
 
-            // Teleplot output for current speed
-            Serial.print(">currentSpeed:");
-            Serial.println(speed);
+            // // Teleplot output for current speed
+            // Serial.print(">currentSpeed:");
+            // Serial.println(speed);
 
-            // Teleplot output for error
-            Serial.print(">error:");
-            Serial.println(error);
+            // // Teleplot output for error
+            // Serial.print(">error:");
+            // Serial.println(error);
 
-            // Teleplot output for effort (divided by 10 to make the graph cleaner)
-            Serial.print(">effort:");
-            Serial.println(effort / 10.0);
+            // // Teleplot output for effort (divided by 10 to make the graph cleaner)
+            // Serial.print(">effort:");
+            // Serial.println(effort / 10.0);
 
             if(debug)
             {            

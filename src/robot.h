@@ -27,6 +27,7 @@ protected:
         ROBOT_IDLE, 
         ROBOT_LINING,
         ROBOT_TURNING,
+        ROBOT_DEAD_RECKONING,
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -86,13 +87,19 @@ protected:
      */
     void EnterLineFollowing(float speed);
     void LineFollowingUpdate(void);
-
+    
+    void DriveAfterIntersection(void);
     bool CheckIntersection(void) {return lineSensor.CheckIntersection();}
     void HandleIntersection(void);
 
-    void EnterTurn(float angleInDeg);
+    void EnterTurn(void);
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
+
+    void SetTarget(int i);
+    
+    void EnterDeadReckon(void);
+    bool CheckDeadReckonComplete(void);
 
     /* IMU routines */
     void HandleOrientationUpdate(void);

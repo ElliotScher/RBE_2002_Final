@@ -22,6 +22,7 @@ void Robot::InitializeRobot(void)
 
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
+
 }
 
 void Robot::EnterIdleState(void)
@@ -35,7 +36,10 @@ void Robot::EnterIdleState(void)
 /**
  * Functions related to the IMU (turning; ramp detection)
  */
-void Robot::EnterTurn(float angleInDeg)
+int8_t currDirection = 0; //EAST
+int8_t targetDirection;
+
+void Robot::EnterTurn(void) // 1: 90 degree left, 2: u-ey, 3: 270 degree left/90 right
 {
     Serial.println(" -> TURN");
     robotState = ROBOT_TURNING;
@@ -43,17 +47,24 @@ void Robot::EnterTurn(float angleInDeg)
     /**
      * TODO: Add code to initiate the turn and set the target
      */
+    if ((targetDirection - currDirection + 4) % 4 < 2){
+        chassis.SetTwist(0, 1);
+    } else {
+        chassis.SetTwist(0,-1);
+    }
 }
 
 bool Robot::CheckTurnComplete(void)
 {
-    bool retVal = false;
-
-    /**
+     /**
      * TODO: add a checker to detect when the turn is complete
      */
 
-    return retVal;
+    if (abs(targetDirection * 90 - fmod(eulerAngles.z + 3600, 360)) < 1){
+        return true;
+    }
+
+    return false;
 }
 
 void Robot::HandleTurnComplete(void)
@@ -61,6 +72,9 @@ void Robot::HandleTurnComplete(void)
     /**
      * TODO: Add code to handle the completed turn
      */
+    chassis.SetWheelSpeeds(0,0);
+    currDirection = targetDirection;
+    robotState = ROBOT_IDLE;
 }
 
 /**
@@ -68,22 +82,57 @@ void Robot::HandleTurnComplete(void)
  * If the Romi is not moving, we can update the bias (but be careful when you first start up!).
  * When it's moving, then we update the heading.
  */
+
 void Robot::HandleOrientationUpdate(void)
 {
-    prevEulerAngles = eulerAngles;
-    if(robotState == ROBOT_IDLE)
-    {
-        // TODO: You'll need to add code to LSM6 to update the bias
-        imu.updateGyroBias();
-    }
+    // Update previous Euler angles
+    prevEulerAngles = eulerAngles; 
 
-    else // update orientation
-    {
-        // TODO: update the orientation
+    if (robotState == ROBOT_IDLE) {
+
+        // Update gyro bias in the IMU
+        imu.updateGyroBias();
+        //Serial.print("BIAS___");
+
+    } else { // Update orientation
+
+        // Read the gyro data from the IMU
+        imu.readGyro();
+        //Serial.print("ANGLE___");
+
+        // Update Euler angles, applying bias correction for each axis
+        eulerAngles.x += (imu.g.x - imu.gyroBias.x) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
+        eulerAngles.y += (imu.g.y - imu.gyroBias.y) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
+        eulerAngles.z += (imu.g.z - imu.gyroBias.z) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
     }
 
 #ifdef __IMU_DEBUG__
-    Serial.println(eulerAngles.z);
+
+        // Serial.print("\t eulerZ: ");
+        // Serial.print(eulerAngles.z);
+        // Serial.print("\tTimestamp: ");
+        // Serial.print(millis());
+
+        // Serial.print("\tROBOT STATE: ");
+        // Serial.println(robotState);    
+
+        // Serial.print("adjusted x: ");
+        // Serial.print(imu.g.x - imu.gyroBias.x);
+        // Serial.print("\t eadjusted y: ");
+        // Serial.print(imu.g.y - imu.gyroBias.y);
+        // Serial.print("\t adjusted xulerZ: ");
+        // Serial.print(imu.g.z - imu.gyroBias.z);
+        // Serial.print("\tTimestamp: ");
+        // Serial.println(millis());
+
+        // Serial.print("adjusted x: ");
+        // Serial.print(imu.g.x);
+        // Serial.print("\t eadjusted y: ");
+        // Serial.print(imu.g.y - imu.gyroBias.y);
+        // Serial.print("\t adjusted xulerZ: ");
+        // Serial.print(imu.g.z - imu.gyroBias.z);
+        // Serial.print("\tTimestamp: ");
+        // Serial.println(millis());
 #endif
 }
 
@@ -95,10 +144,11 @@ void Robot::EnterLineFollowing(float speed)
     Serial.println(" -> LINING"); 
     baseSpeed = speed; 
     robotState = ROBOT_LINING;
+
 }
 
-float KpLine = 0.002;
-float KdLine = 0.0008;
+float KpLine = 0.0003;
+float KdLine = 0.00008;
 float prevLineError;
 
 void Robot::LineFollowingUpdate(void)
@@ -115,61 +165,84 @@ void Robot::LineFollowingUpdate(void)
     }
 }
 
+float deadReckonTime, prevTimestamp;
+
+void Robot::EnterDeadReckon(void){
+    robotState = ROBOT_DEAD_RECKONING;
+    chassis.SetTwist(5,0);
+    deadReckonTime = 0;
+    prevTimestamp = millis();
+}
+
+bool Robot::CheckDeadReckonComplete(void){
+    deadReckonTime += millis() - prevTimestamp;
+    prevTimestamp = millis();
+    //Serial.println(deadReckonTime);
+
+    if (deadReckonTime > 1500){
+        robotState = ROBOT_IDLE;
+        return true;
+    }
+
+    return false;
+}
+
 /**
  * As coded, HandleIntersection will make the robot drive out 3 intersections, turn around,
  * and stop back at the start. You will need to change the behaviour accordingly.
  */
+
+int currentI = 0, currentJ = 0;         // Current grid position 
+int targetI = 2, targetJ = 0;           // Target grid position
+bool reverseMode = false;               // Mode tracking forward or reverse
+
+void Robot::SetTarget(int i){
+    targetI = i;
+    currentI = 0;
+    currentJ = 0;  
+    currDirection = 0;
+    eulerAngles.x = 0, eulerAngles.y = 0, eulerAngles.z = 0;
+    reverseMode = false;
+}
+
 void Robot::HandleIntersection(void)
 {
-    Serial.print("X: ");
-    if(robotState == ROBOT_LINING) 
-    {
-        switch(nodeTo)
-        {
-            case NODE_START:
-                if(nodeFrom == NODE_1)
-                    EnterIdleState();
-                break;
-            case NODE_1:
-                // By default, we'll continue on straight
-                if(nodeFrom == NODE_START) 
-                {
-                    nodeTo = NODE_2;
-                }
-                else if(nodeFrom == NODE_2)
-                {
-                    nodeTo = NODE_START;
-                }
-                nodeFrom = NODE_1;
-                break;
-            case NODE_2:
-                // By default, we'll continue on straight
-                if(nodeFrom == NODE_1) 
-                {
-                    nodeTo = NODE_3;
-                }
-                else if(nodeFrom == NODE_3)
-                {
-                    nodeTo = NODE_1;
-                }
-                nodeFrom = NODE_2;
-                break;
-            case NODE_3:
-                // By default, we'll bang a u-ey
-                if(nodeFrom == NODE_2) 
-                {
-                    nodeTo = NODE_2;
-                    nodeFrom = NODE_3;
-                    EnterTurn(180);
-                }
-                break;
-            default:
-                break;
+    if (!reverseMode) {
+        // Forward mode logic                                    
+        if (currDirection == 0) { //east
+            currentI++;
+            if (currentI >= targetI && currentJ >= targetJ) {
+                targetDirection = 2; //turn to west
+                EnterDeadReckon();
+                reverseMode = true;
+            } else if (currentI >= targetI) {
+                targetDirection = 1; //turn to north
+                EnterDeadReckon();    
+            }               
+        } else { //north
+            currentJ++;
+            if (currentI >= targetI && currentJ >= targetJ) {
+                targetDirection = 3; // turn to south
+                EnterDeadReckon();
+                reverseMode = true;
+            }                   
         }
-        Serial.print(nodeFrom);
-        Serial.print("->");
-        Serial.print(nodeTo);
-        Serial.print('\n');
+    } else {
+        // Reverse mode logic       
+        if (currDirection == 2) { // west
+            currentI--;  
+            if (currentI <= 0 && currentJ <= 0) {
+                EnterIdleState(); //stop when back to 0,0
+                Serial.println("STOP");
+                Serial.end();     
+            }                
+        } else if (currDirection == 3) { // south
+            currentJ--;
+            if (currentJ <= 0) {
+                targetDirection = 2; // turn to west
+                EnterDeadReckon();  
+            }                   
+        }
     }
 }
 
@@ -179,6 +252,24 @@ void Robot::RobotLoop(void)
      * The main loop for your robot. Process both synchronous events (motor control),
      * and asynchronous events (IR presses, distance readings, etc.).
     */
+
+    // Serial.print("\t eulerZ: ");
+    // Serial.print(eulerAngles.z);
+    // Serial.print("\tTimestamp: ");
+    // Serial.println(millis());
+
+        // Serial.print("Position: (");
+        // Serial.print(currentI);
+        // Serial.print(", ");
+        // Serial.print(currentJ);
+        // Serial.print(")\tCurrent Direction: ");
+        // Serial.print(currDirection);
+        // Serial.print("\tTarget Direction: ");
+        // Serial.print(targetDirection);
+        // Serial.print("\tTargetI: ");
+        // Serial.print(targetI);
+        // Serial.print("\tREVERSE? ");
+        // Serial.println(reverseMode);
 
     /**
      * Handle any IR remote keypresses.
@@ -197,6 +288,18 @@ void Robot::RobotLoop(void)
             LineFollowingUpdate();
         }
 
+        if (robotState == ROBOT_TURNING){
+            if(CheckTurnComplete()) {
+                HandleTurnComplete();
+                EnterLineFollowing(15);
+            }
+        }
+
+        if (robotState == ROBOT_DEAD_RECKONING){
+            if(CheckDeadReckonComplete()){
+                EnterTurn();
+            }
+        }
         chassis.UpdateMotors();
 
         // add synchronous, post-motor-update actions here
@@ -206,15 +309,19 @@ void Robot::RobotLoop(void)
     /**
      * Check for any intersections
      */
-    //if(lineSensor.CheckIntersection()) HandleIntersection();
-    //if(CheckTurnComplete()) HandleTurnComplete();
+    if(lineSensor.CheckIntersection()) HandleIntersection();
 
     /**
      * Check for an IMU update
      */
+
+    digitalWrite(12, HIGH);
+
     if(imu.checkForNewData())
     {
         HandleOrientationUpdate();
     }
+
+    digitalWrite(12, LOW);
 }
 

@@ -144,7 +144,11 @@ public:
       /**
        * TODO: add a low-pass filter to update the bias
        */
-      
+      float zeta = 0.9;
+      gyroBias.x = zeta * gyroBias.x + (1 - zeta) * g.x;
+      gyroBias.y = zeta * gyroBias.y + (1 - zeta) * g.y;
+      gyroBias.z = zeta * gyroBias.z + (1 - zeta) * g.z;
+    
       return gyroBias;
     }
 
@@ -158,10 +162,10 @@ public:
     int16_t testReg(uint8_t address, regAddr reg);
 
     //conversion factors are set when you change ODR or FS
-    float mdpsPerLSB = 0;
+    float mdpsPerLSB = 17.5;
     float mgPerLSB = 0;
-    float accODR = 0;   // Hz
-    float gyroODR = 0;  // Hz
+    float accODR = 13;   // Hz
+    float gyroODR = 13;  // Hz
 
     uint8_t last_status; // status of last I2C transmission
 

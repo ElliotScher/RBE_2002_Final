@@ -29,7 +29,7 @@ LSM6::LSM6(void)
 bool LSM6::checkForNewData(void)
 {
   bool retVal = false;
-  if(getStatus() & 0x01)
+  if(getStatus() & 0x02)
   {
     read();
 
@@ -228,7 +228,7 @@ void LSM6::enableDefault(void)
   {
     // Set the gyro full scale and data rate
     setFullScaleGyro(GYRO_FS245);
-    setGyroDataOutputRate(ODR13);
+    setGyroDataOutputRate(ODR104);
 
     // Set the accelerometer full scale and data rate
     setFullScaleAcc(ACC_FS2);
