@@ -27,6 +27,7 @@ protected:
         ROBOT_IDLE, 
         ROBOT_LINING,
         ROBOT_TURNING,
+        ROBOT_CLIMBING
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -97,6 +98,10 @@ protected:
     void EnterTurn(float angleInDeg);
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
+
+    void EnterClimbing(float speed);
+    bool CheckClimbComplete(void);
+    void HandleClimbComplete(void);
 
     /* IMU routines */
     void HandleOrientationUpdate(void);

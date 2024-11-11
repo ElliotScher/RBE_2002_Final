@@ -157,6 +157,16 @@ void Robot::LineFollowingUpdate(void)
     {
         chassis.SetTwist(baseSpeed, lineSensor.CalcEffort());
     }
+    if (eulerAngles.y < -7.0) {
+        EnterClimbing(10);
+    }
+}
+
+void Robot::HandleClimbComplete(void)
+{
+    chassis.SetTwist(0, 0);
+    digitalWrite(13, LOW);
+    robotState = ROBOT_IDLE;
 }
 
 /**
@@ -194,6 +204,21 @@ void Robot::HandleIntersection(void)
     }
 }
 
+void Robot::EnterClimbing(float speed) 
+{
+        Serial.println(" -> CLIMBING");
+        baseSpeed = speed; 
+        robotState = ROBOT_CLIMBING;
+        digitalWrite(13, HIGH);
+}
+
+bool Robot::CheckClimbComplete(void) {
+    if (robotState == ROBOT_CLIMBING) {
+        return eulerAngles.y < 0.0 && eulerAngles.y > -5.0;
+    }
+    return false;
+}
+
 void Robot::RobotLoop(void) 
 {
     /**
@@ -229,6 +254,7 @@ void Robot::RobotLoop(void)
      */
     if(lineSensor.CheckIntersection()) HandleIntersection();
     if(CheckTurnComplete()) HandleTurnComplete();
+    if(CheckClimbComplete()) HandleClimbComplete();
 
     /**
      * Check for an IMU update

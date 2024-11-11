@@ -144,7 +144,7 @@ public:
     vector<float> updateGyroBias(void) 
     {
       gyroBias.x = (SIGMA * previousGyroBias.x) + ((1 - SIGMA) * g.x);
-      // gyroBias.y = (SIGMA * previousGyroBias.y) + ((1 - SIGMA) * g.y);
+      gyroBias.y = (SIGMA * previousGyroBias.y) + ((1 - SIGMA) * g.y);
       gyroBias.z = (SIGMA * previousGyroBias.z) + ((1 - SIGMA) * g.z);
 
       return gyroBias;

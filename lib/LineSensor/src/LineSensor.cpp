@@ -2,7 +2,7 @@
 
 #define DARK_THRESHOLD 100;
 
-float kp = 0.0005;
+float kp = 0.005;
 float kd = 0.005;
 
 int16_t prevError = 0;
@@ -29,7 +29,7 @@ bool LineSensor::CheckIntersection(void)
         Serial.println("Intersection detected!");
     }
 
-    return retVal;
+    return false;
 }
 
 float LineSensor::CalcError(void) 
