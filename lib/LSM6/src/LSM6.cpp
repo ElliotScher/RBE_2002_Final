@@ -24,8 +24,6 @@ LSM6::LSM6(void)
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-#define KAPPA 0.01
-#define EPSILON 0.00005
 bool LSM6::checkForNewData(void)
 {
   bool retVal = false;

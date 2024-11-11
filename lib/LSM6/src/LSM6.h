@@ -109,6 +109,8 @@ class LSM6
     vector<int16_t> g; // gyro readings
 
     const float SIGMA = 0.775; // for updating bias
+    const float KAPPA = 0.01;
+    const float EPSILON = 0.0001;
 
 public:
     LSM6(void);
@@ -141,8 +143,10 @@ public:
 
     vector<float> updateGyroBias(void) 
     {
+      gyroBias.x = (SIGMA * previousGyroBias.x) + ((1 - SIGMA) * g.x);
+      // gyroBias.y = (SIGMA * previousGyroBias.y) + ((1 - SIGMA) * g.y);
       gyroBias.z = (SIGMA * previousGyroBias.z) + ((1 - SIGMA) * g.z);
-      previousGyroBias.z = gyroBias.z;
+
       return gyroBias;
     }
 

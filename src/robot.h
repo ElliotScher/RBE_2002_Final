@@ -48,6 +48,7 @@ protected:
     LSM6 imu;
     LSM6::vector<float> prevEulerAngles;
     LSM6::vector<float> eulerAngles;
+    float predictedPitchAngle = 0;
 
     /* targetHeading is used for commanding the robot to turn */
     float targetHeading;

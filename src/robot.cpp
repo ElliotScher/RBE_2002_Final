@@ -15,8 +15,8 @@ void Robot::InitializeRobot(void)
      * Initialize the IMU and set the rate and scale to reasonable values.
      */
     imu.init();
-    imu.setGyroDataOutputRate(LSM6::ODR13);
-    imu.setFullScaleGyro(LSM6::GYRO_FS500);
+    imu.setGyroDataOutputRate(LSM6::ODR104);
+    imu.setFullScaleGyro(LSM6::GYRO_FS245);
 
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
@@ -84,6 +84,7 @@ void Robot::HandleTurnComplete(void)
  */
 void Robot::HandleOrientationUpdate(void)
 {
+    float observedPitchAngle;
     prevEulerAngles = eulerAngles;
     if(robotState == ROBOT_IDLE)
     {
@@ -92,7 +93,24 @@ void Robot::HandleOrientationUpdate(void)
     }
     else // update orientation
     {
-        eulerAngles.z += (LSM6::CTRL2_G * (imu.g.z - imu.gyroBias.z) * (1.0 / imu.gyroODR)) / 1000.0;
+        observedPitchAngle = atan2(-imu.a.x, imu.a.z) * (180.0 / M_PI);
+
+        predictedPitchAngle = eulerAngles.y + ((imu.mdpsPerLSB) * (imu.g.y - imu.gyroBias.y) * (1.0 / imu.gyroODR)) / 1000.0;
+
+        imu.gyroBias.y = imu.previousGyroBias.y - imu.EPSILON / ((imu.mdpsPerLSB / 1000.0) * (1.0 / imu.gyroODR)) * (observedPitchAngle - predictedPitchAngle);
+
+        eulerAngles.y = predictedPitchAngle + imu.KAPPA * (observedPitchAngle - predictedPitchAngle);
+
+
+
+
+
+
+
+
+
+
+        eulerAngles.z += (imu.mdpsPerLSB * (imu.g.z - imu.gyroBias.z) * (1.0 / imu.gyroODR)) / 1000.0;
 
         if (eulerAngles.z > 180.0) {
             eulerAngles.z -= 360.0;
@@ -100,12 +118,26 @@ void Robot::HandleOrientationUpdate(void)
         if (eulerAngles.z < -180.0) {
             eulerAngles.z += 360.0;
         }
+
+        imu.previousGyroBias = imu.gyroBias;
     }
 
 #ifdef __IMU_DEBUG__
-    Serial.print(">Yaw: ");
-    Serial.print(eulerAngles.z);
-    Serial.println("\n");
+    // Serial.print(">Yaw: ");
+    // Serial.print(eulerAngles.z);
+    // Serial.println("\n");
+
+    Serial.print(">Predicted:");
+    Serial.println(predictedPitchAngle);
+
+    Serial.print(">Observed:");
+    Serial.println(observedPitchAngle);
+
+    Serial.print(">Filtered:");
+    Serial.println(eulerAngles.y);
+
+    Serial.print(">Gyro Bias:");
+    Serial.println(imu.gyroBias.y);
 #endif
 }
 
@@ -114,7 +146,7 @@ void Robot::HandleOrientationUpdate(void)
  */
 void Robot::EnterLineFollowing(float speed) 
 {
-    Serial.println(" -> LINING"); 
+    Serial.println(" -> LINING");
     baseSpeed = speed; 
     robotState = ROBOT_LINING;
 }
