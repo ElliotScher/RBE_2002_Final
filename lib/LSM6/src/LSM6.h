@@ -109,6 +109,7 @@ class LSM6
     vector<int16_t> g; // gyro readings
 
     const float SIGMA = 0.95; // for updating bias
+    const float EPSILON = 0.00005;
 
 public:
     LSM6(void);
@@ -170,8 +171,8 @@ public:
     uint8_t last_status; // status of last I2C transmission
 
     // for the complementary filter
-    // float estimatedPitchAngle = 0;
-    // vector<float> eulerAngles;
+    float estimatedPitchAngle = 0;
+    vector<float> eulerAngles;
     vector<float> gyroBias;
 
     /* We make Robot a friend to avoid all the setters and getters. */

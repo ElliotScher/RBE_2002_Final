@@ -3,11 +3,11 @@
 #include <Arduino.h>
 
 //from left to right
-#define LINE_SENSOR1 A5
+#define LINE_SENSOR1 A6
 #define LINE_SENSOR2 A4
 #define LINE_SENSOR3 A3
 #define LINE_SENSOR4 A2
-#define LINE_SENSOR5 A1
+#define LINE_SENSOR5 A11
 #define LINE_SENSOR6 A0
 
 class LineSensor

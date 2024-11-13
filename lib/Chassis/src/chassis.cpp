@@ -125,6 +125,11 @@ void Chassis::SetWheelSpeeds(float leftSpeedCMperSec, float rightSpeedCMperSec)
 
     leftMotor.SetTargetSpeed(leftEncoderTicksPerInterval);
     rightMotor.SetTargetSpeed(rightEncoderTicksPerInterval);
+    // Serial.print("left: ");
+    // Serial.print(leftEncoderTicksPerInterval);
+    // Serial.print("\tright: ");
+    // Serial.println(rightEncoderTicksPerInterval);
+
 }
 
 /**

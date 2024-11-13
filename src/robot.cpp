@@ -83,56 +83,63 @@ void Robot::HandleTurnComplete(void)
  * When it's moving, then we update the heading.
  */
 
+float accelBiasX, accelBiasY, accelBiasZ, zetaAccel = 0.9;
+float predictedPitchAngle, observedPitchAngle, correctionPitchAngle, kappa = 0.1;
+
 void Robot::HandleOrientationUpdate(void)
 {
     // Update previous Euler angles
-    prevEulerAngles = eulerAngles; 
+    prevEulerAngles = eulerAngles;
 
     if (robotState == ROBOT_IDLE) {
 
         // Update gyro bias in the IMU
         imu.updateGyroBias();
-        //Serial.print("BIAS___");
+
+        accelBiasX = zetaAccel * accelBiasX + (1 - zetaAccel) * imu.a.x;
+        accelBiasY = zetaAccel * accelBiasY + (1 - zetaAccel) * imu.a.y;
 
     } else { // Update orientation
 
         // Read the gyro data from the IMU
         imu.readGyro();
-        //Serial.print("ANGLE___");
 
         // Update Euler angles, applying bias correction for each axis
         eulerAngles.x += (imu.g.x - imu.gyroBias.x) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
-        eulerAngles.y += (imu.g.y - imu.gyroBias.y) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
         eulerAngles.z += (imu.g.z - imu.gyroBias.z) * (imu.mdpsPerLSB/1000) / imu.gyroODR;
+
+        predictedPitchAngle += ((imu.mdpsPerLSB/1000) / imu.gyroODR) * (imu.g.y - imu.gyroBias.y);
+        //imu.gyroBias.y -= imu.EPSILON / ((imu.mdpsPerLSB / 1000.0) * (1.0 / imu.gyroODR)) * (observedPitchAngle - predictedPitchAngle);
+        
+        observedPitchAngle = atan2((float) -imu.a.x, (float) imu.a.z - accelBiasX) * 360 / (2*3.14159);
+        correctionPitchAngle = predictedPitchAngle + kappa*(observedPitchAngle-predictedPitchAngle);
     }
 
 #ifdef __IMU_DEBUG__
 
-        // Serial.print("\t eulerZ: ");
-        // Serial.print(eulerAngles.z);
-        // Serial.print("\tTimestamp: ");
-        // Serial.print(millis());
+        // Serial.print("accelx:");
+        // Serial.print(imu.a.x);
+        // Serial.print("\taccely:");
+        // Serial.print(imu.a.y);
+        // Serial.print("\taccelz:");
+        // Serial.println(imu.a.z);
 
-        // Serial.print("\tROBOT STATE: ");
-        // Serial.println(robotState);    
+        // Serial.print(">gyro:");
+        // Serial.print(predictedPitchAngle);
+        // Serial.print("\t>accel:");
+        // Serial.print(observedPitchAngle);
+        // Serial.print("\t>pitch:");
+        // Serial.println(correctionPitchAngle);
 
-        // Serial.print("adjusted x: ");
-        // Serial.print(imu.g.x - imu.gyroBias.x);
-        // Serial.print("\t eadjusted y: ");
-        // Serial.print(imu.g.y - imu.gyroBias.y);
-        // Serial.print("\t adjusted xulerZ: ");
-        // Serial.print(imu.g.z - imu.gyroBias.z);
-        // Serial.print("\tTimestamp: ");
-        // Serial.println(millis());
+        // Serial.print("\t    a_biasX: ");
+        // Serial.print(accelBiasX - imu.a.x);
+        // Serial.print("\t    a_biasY: ");
+        // Serial.print(accelBiasY - imu.a.y);
+        // Serial.print("\t    g_biasx: ");
+        // Serial.print(imu.gyroBias.x - imu.g.x);
+        // Serial.print("\t    g_biasz: ");
+        // Serial.println(imu.g.z);
 
-        // Serial.print("adjusted x: ");
-        // Serial.print(imu.g.x);
-        // Serial.print("\t eadjusted y: ");
-        // Serial.print(imu.g.y - imu.gyroBias.y);
-        // Serial.print("\t adjusted xulerZ: ");
-        // Serial.print(imu.g.z - imu.gyroBias.z);
-        // Serial.print("\tTimestamp: ");
-        // Serial.println(millis());
 #endif
 }
 
@@ -147,9 +154,11 @@ void Robot::EnterLineFollowing(float speed)
 
 }
 
-float KpLine = 0.0003;
+float KpLine = 0.0008;
 float KdLine = 0.00008;
-float prevLineError;
+float prevLineError, prevCorrected;
+bool onAngle = false;
+float angleThreshold = -7, hysteresisBand = 3;
 
 void Robot::LineFollowingUpdate(void)
 {
@@ -160,8 +169,30 @@ void Robot::LineFollowingUpdate(void)
         float deltaLineError = lineError - prevLineError;
         float turnEffort = KpLine*lineError + KdLine*deltaLineError;
         prevLineError = lineError;
+        //Serial.println(turnEffort);
 
         chassis.SetTwist(baseSpeed, turnEffort);
+
+        if (!onAngle){
+            if(correctionPitchAngle < angleThreshold - hysteresisBand){
+                onAngle = true;
+                Serial.println("ON ANGLE \n\n\n\n\n\n\n\n\n\n");
+                digitalWrite(30, LOW);
+            }
+        } else {
+            if(correctionPitchAngle > angleThreshold + hysteresisBand){
+                onAngle = false;
+                Serial.println("ON FLAT \n\n\n\n\n\n\n\n\n\n");
+                targetDirection = 2;
+                EnterTurn();
+                digitalWrite(30, HIGH);
+            }
+        }
+
+        Serial.print("pitch: ");
+        Serial.println(correctionPitchAngle);
+
+        prevCorrected = correctionPitchAngle;
     }
 }
 
@@ -177,7 +208,6 @@ void Robot::EnterDeadReckon(void){
 bool Robot::CheckDeadReckonComplete(void){
     deadReckonTime += millis() - prevTimestamp;
     prevTimestamp = millis();
-    //Serial.println(deadReckonTime);
 
     if (deadReckonTime > 1500){
         robotState = ROBOT_IDLE;
@@ -193,16 +223,20 @@ bool Robot::CheckDeadReckonComplete(void){
  */
 
 int currentI = 0, currentJ = 0;         // Current grid position 
-int targetI = 2, targetJ = 0;           // Target grid position
+int targetI = 200, targetJ = 0;           // Target grid position
 bool reverseMode = false;               // Mode tracking forward or reverse
 
-void Robot::SetTarget(int i){
+void Robot::SetTargetI(int i){
     targetI = i;
     currentI = 0;
     currentJ = 0;  
     currDirection = 0;
     eulerAngles.x = 0, eulerAngles.y = 0, eulerAngles.z = 0;
     reverseMode = false;
+}
+
+void Robot::SetTargetJ(int j){
+    targetJ = j;
 }
 
 void Robot::HandleIntersection(void)
@@ -233,8 +267,7 @@ void Robot::HandleIntersection(void)
             currentI--;  
             if (currentI <= 0 && currentJ <= 0) {
                 EnterIdleState(); //stop when back to 0,0
-                Serial.println("STOP");
-                Serial.end();     
+                Serial.println("STOP"); 
             }                
         } else if (currDirection == 3) { // south
             currentJ--;
@@ -252,24 +285,6 @@ void Robot::RobotLoop(void)
      * The main loop for your robot. Process both synchronous events (motor control),
      * and asynchronous events (IR presses, distance readings, etc.).
     */
-
-    // Serial.print("\t eulerZ: ");
-    // Serial.print(eulerAngles.z);
-    // Serial.print("\tTimestamp: ");
-    // Serial.println(millis());
-
-        // Serial.print("Position: (");
-        // Serial.print(currentI);
-        // Serial.print(", ");
-        // Serial.print(currentJ);
-        // Serial.print(")\tCurrent Direction: ");
-        // Serial.print(currDirection);
-        // Serial.print("\tTarget Direction: ");
-        // Serial.print(targetDirection);
-        // Serial.print("\tTargetI: ");
-        // Serial.print(targetI);
-        // Serial.print("\tREVERSE? ");
-        // Serial.println(reverseMode);
 
     /**
      * Handle any IR remote keypresses.
@@ -291,7 +306,7 @@ void Robot::RobotLoop(void)
         if (robotState == ROBOT_TURNING){
             if(CheckTurnComplete()) {
                 HandleTurnComplete();
-                EnterLineFollowing(15);
+                EnterLineFollowing(10);
             }
         }
 
@@ -315,13 +330,9 @@ void Robot::RobotLoop(void)
      * Check for an IMU update
      */
 
-    digitalWrite(12, HIGH);
-
     if(imu.checkForNewData())
     {
         HandleOrientationUpdate();
     }
-
-    digitalWrite(12, LOW);
 }
 

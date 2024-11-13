@@ -96,7 +96,8 @@ protected:
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
 
-    void SetTarget(int i);
+    void SetTargetI(int i);
+    void SetTargetJ(int j);
     
     void EnterDeadReckon(void);
     bool CheckDeadReckonComplete(void);
