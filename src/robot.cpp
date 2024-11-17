@@ -1,8 +1,11 @@
 #include "robot.h"
 #include <IRdecoder.h>
+#include <openmv.h>
+
 
 void Robot::InitializeRobot(void)
 {
+    Serial.begin(9600);
     chassis.InititalizeChassis();
 
     /**
@@ -33,9 +36,6 @@ void Robot::EnterIdleState(void)
     robotState = ROBOT_IDLE;
 }
 
-/**
- * Functions related to the IMU (turning; ramp detection)
- */
 int8_t currDirection = 0; //EAST
 int8_t targetDirection;
 
@@ -44,9 +44,6 @@ void Robot::EnterTurn(void) // 1: 90 degree left, 2: u-ey, 3: 270 degree left/90
     Serial.println(" -> TURN");
     robotState = ROBOT_TURNING;
 
-    /**
-     * TODO: Add code to initiate the turn and set the target
-     */
     if ((targetDirection - currDirection + 4) % 4 < 2){
         chassis.SetTwist(0, 1);
     } else {
@@ -56,10 +53,6 @@ void Robot::EnterTurn(void) // 1: 90 degree left, 2: u-ey, 3: 270 degree left/90
 
 bool Robot::CheckTurnComplete(void)
 {
-     /**
-     * TODO: add a checker to detect when the turn is complete
-     */
-
     if (abs(targetDirection * 90 - fmod(eulerAngles.z + 3600, 360)) < 1){
         return true;
     }
@@ -69,19 +62,10 @@ bool Robot::CheckTurnComplete(void)
 
 void Robot::HandleTurnComplete(void)
 {
-    /**
-     * TODO: Add code to handle the completed turn
-     */
     chassis.SetWheelSpeeds(0,0);
     currDirection = targetDirection;
     robotState = ROBOT_IDLE;
 }
-
-/**
- * Here is a good example of handling information differently, depending on the state.
- * If the Romi is not moving, we can update the bias (but be careful when you first start up!).
- * When it's moving, then we update the heading.
- */
 
 float accelBiasX, accelBiasY, accelBiasZ, zetaAccel = 0.9;
 float predictedPitchAngle, observedPitchAngle, correctionPitchAngle, kappa = 0.1;
@@ -117,36 +101,10 @@ void Robot::HandleOrientationUpdate(void)
 
 #ifdef __IMU_DEBUG__
 
-        // Serial.print("accelx:");
-        // Serial.print(imu.a.x);
-        // Serial.print("\taccely:");
-        // Serial.print(imu.a.y);
-        // Serial.print("\taccelz:");
-        // Serial.println(imu.a.z);
-
-        // Serial.print(">gyro:");
-        // Serial.print(predictedPitchAngle);
-        // Serial.print("\t>accel:");
-        // Serial.print(observedPitchAngle);
-        // Serial.print("\t>pitch:");
-        // Serial.println(correctionPitchAngle);
-
-        // Serial.print("\t    a_biasX: ");
-        // Serial.print(accelBiasX - imu.a.x);
-        // Serial.print("\t    a_biasY: ");
-        // Serial.print(accelBiasY - imu.a.y);
-        // Serial.print("\t    g_biasx: ");
-        // Serial.print(imu.gyroBias.x - imu.g.x);
-        // Serial.print("\t    g_biasz: ");
-        // Serial.println(imu.g.z);
-
 #endif
 }
 
-/**
- * Functions related to line following and intersection detection.
- */
-void Robot::EnterLineFollowing(float speed) 
+void Robot::EnterLining(float speed) 
 {
     Serial.println(" -> LINING"); 
     baseSpeed = speed; 
@@ -160,7 +118,7 @@ float prevLineError, prevCorrected;
 bool onAngle = false;
 float angleThreshold = -7, hysteresisBand = 3;
 
-void Robot::LineFollowingUpdate(void)
+void Robot::LiningUpdate(void)
 {
     if(robotState == ROBOT_LINING) 
     {
@@ -188,7 +146,6 @@ void Robot::LineFollowingUpdate(void)
                 digitalWrite(30, HIGH);
             }
         }
-
         Serial.print("pitch: ");
         Serial.println(correctionPitchAngle);
 
@@ -200,7 +157,8 @@ float deadReckonTime, prevTimestamp;
 
 void Robot::EnterDeadReckon(void){
     robotState = ROBOT_DEAD_RECKONING;
-    chassis.SetTwist(5,0);
+    Serial.println(" -> DEAD RECKONING");
+    chassis.SetTwist(-10,0);
     deadReckonTime = 0;
     prevTimestamp = millis();
 }
@@ -217,14 +175,9 @@ bool Robot::CheckDeadReckonComplete(void){
     return false;
 }
 
-/**
- * As coded, HandleIntersection will make the robot drive out 3 intersections, turn around,
- * and stop back at the start. You will need to change the behaviour accordingly.
- */
-
-int currentI = 0, currentJ = 0;         // Current grid position 
-int targetI = 200, targetJ = 0;           // Target grid position
-bool reverseMode = false;               // Mode tracking forward or reverse
+int currentI = 0, currentJ = 0;
+int targetI = 200, targetJ = 0;
+bool reverseMode = false;
 
 void Robot::SetTargetI(int i){
     targetI = i;
@@ -279,60 +232,127 @@ void Robot::HandleIntersection(void)
     }
 }
 
+AprilTagDatum tag;
+bool tagFound = false;
+void Robot::FindAprilTags(void)
+{
+    if (camera.checkUART(tag) && tag.id == 0) {
+        tagFound = true;
+        // Serial.print(F("Tag [cx="));
+        // Serial.print(tag.cx);
+        // Serial.print(F(", cy="));
+        // Serial.print(tag.cy);
+        // Serial.print(F(", w="));
+        // Serial.print(tag.w);
+        // Serial.print(F(", h="));
+        // Serial.print(tag.h);
+        // Serial.print(F(", id="));
+        // Serial.print(tag.id);
+        // Serial.print(F(", rot="));
+        // Serial.print(tag.rot);
+        // Serial.println(F("]"));
+    } else {
+        tagFound = false;
+    }
+}
+
+void Robot::EnterSearch(void){
+    robotState = ROBOT_SEARCHING;
+    Serial.println(" -> SEARCHING");
+    chassis.SetTwist(0,1.2);
+    tagFound = false;
+}
+
+bool Robot::CheckSearchComplete(void){
+    FindAprilTags();
+    return tagFound;
+}
+
+void Robot::EnterApproach(void){
+    robotState = ROBOT_APPROACHING;
+    Serial.println(" -> APPROACHING"); 
+    chassis.SetTwist(5,0);
+}
+
+float KpSpeed = 2, KpTwist = 0.02;
+
+void Robot::ApproachUpdate(void){
+    FindAprilTags();
+    if (tagFound){
+        float speed = (tag.h - 70.0) * KpSpeed;
+        float twist = (tag.cx - 90.0) * KpTwist;
+
+        float maxSpeed = 15.0;
+        float maxTwist = 3.0;
+        
+        if (speed > maxSpeed) {
+            speed = maxSpeed;
+        } else if (speed < -1.0 * maxSpeed) {
+            speed = -1.0 * maxSpeed;
+        }
+
+        if (twist > maxTwist) {
+            twist = maxTwist;
+        } else if (twist < -1.0 * maxTwist) {
+            twist = -1.0 * maxTwist;
+        }
+
+        chassis.SetTwist(speed, twist);
+    }
+}
+
+bool Robot::CheckApproachComplete(void){
+    if (tagFound && tag.h >= 55) {
+        return true;
+    }
+    return false;
+}
+
 void Robot::RobotLoop(void) 
 {
-    /**
-     * The main loop for your robot. Process both synchronous events (motor control),
-     * and asynchronous events (IR presses, distance readings, etc.).
-    */
-
-    /**
-     * Handle any IR remote keypresses.
-     */
+    //IR REMOTE KEY PRESSES
     int16_t keyCode = decoder.getKeyCode();
     if(keyCode != -1) HandleKeyCode(keyCode);
 
-    /**
-     * Check the Chassis timer, which is used for executing motor control
-     */
+    //TIMER RELATED
     if(chassis.CheckChassisTimer())
     {
-        // add synchronous, pre-motor-update actions here
         if(robotState == ROBOT_LINING)
         {
-            LineFollowingUpdate();
+            LiningUpdate();
+
+            //CHECK FOR INTERSECTIONS
+            if(lineSensor.CheckIntersection()) HandleIntersection();
         }
 
         if (robotState == ROBOT_TURNING){
             if(CheckTurnComplete()) {
                 HandleTurnComplete();
-                EnterLineFollowing(10);
             }
         }
 
         if (robotState == ROBOT_DEAD_RECKONING){
             if(CheckDeadReckonComplete()){
-                EnterTurn();
+                EnterIdleState();
+            }
+        }
+
+        if (robotState == ROBOT_SEARCHING){
+            if (CheckSearchComplete()){
+                EnterApproach();
+            }
+        }
+
+        if (robotState == ROBOT_APPROACHING){
+            ApproachUpdate();
+            if(CheckApproachComplete()){
+                EnterDeadReckon();
             }
         }
         chassis.UpdateMotors();
-
-        // add synchronous, post-motor-update actions here
-
     }
 
-    /**
-     * Check for any intersections
-     */
-    if(lineSensor.CheckIntersection()) HandleIntersection();
-
-    /**
-     * Check for an IMU update
-     */
-
-    if(imu.checkForNewData())
-    {
-        HandleOrientationUpdate();
-    }
+    //CHECK IMU
+    if(imu.checkForNewData()) HandleOrientationUpdate();
 }
 

@@ -45,7 +45,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
         {
             case REWIND:
                 //EnterLineFollowing(keyString.toInt());
-                EnterLineFollowing(10);
+                EnterLining(10);
                 keyString += (char)(keyCode + 34);
                 break;
             case NUM_1:
@@ -67,11 +67,9 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 keyString += '0';
                 break;
             case UP_ARROW:
-                SetTargetI(keyString.toInt());
                 break;
             case DOWN_ARROW:
-                SetTargetJ(keyString.toInt());
-                EnterLineFollowing(10);
+                EnterSearch();
                 break;
         }
     }

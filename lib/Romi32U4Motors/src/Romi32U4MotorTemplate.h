@@ -134,32 +134,8 @@ protected:
             // Set the effort for the motor
             SetEffort(effort);
 
-            // Teleplot output for target speed
-            // Serial.print(">targetSpeed:");
-            // Serial.println(targetSpeed);
-
-            // // Teleplot output for current speed
-            // Serial.print(">currentSpeed:");
-            // Serial.println(speed);
-
-            // // Teleplot output for error
-            // Serial.print(">error:");
-            // Serial.println(error);
-
-            // // Teleplot output for effort (divided by 10 to make the graph cleaner)
-            // Serial.print(">effort:");
-            // Serial.println(effort / 10.0);
-
-            if(debug)
-            {            
-                // Serial.print(targetSpeed);
-                // Serial.print('\t');
-                // Serial.print(speed);
-                // Serial.print('\t');
-                // Serial.print(error);
-                // Serial.print('\t');
-                // Serial.print(effort / 10.0); // N.B. that we divide by 10 to make the graph cleaner
-                // Serial.print('\n');
+            if(debug){            
+        
             }
         }    
     }

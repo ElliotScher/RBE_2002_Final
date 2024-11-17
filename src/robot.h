@@ -2,6 +2,7 @@
 #include "chassis.h"
 #include <LineSensor.h>
 #include <LSM6.h>
+#include <openmv.h>
 
 class Robot
 {
@@ -28,6 +29,8 @@ protected:
         ROBOT_LINING,
         ROBOT_TURNING,
         ROBOT_DEAD_RECKONING,
+        ROBOT_SEARCHING,
+        ROBOT_APPROACHING,
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -38,6 +41,7 @@ protected:
     LineSensor lineSensor;
 
     /* To add later: rangefinder, camera, etc.*/
+    OpenMV camera;
 
     // For managing key presses
     String keyString;
@@ -85,8 +89,8 @@ protected:
     /**
      * Line following and navigation routines.
      */
-    void EnterLineFollowing(float speed);
-    void LineFollowingUpdate(void);
+    void EnterLining(float speed);
+    void LiningUpdate(void);
     
     void DriveAfterIntersection(void);
     bool CheckIntersection(void) {return lineSensor.CheckIntersection();}
@@ -105,6 +109,18 @@ protected:
     /* IMU routines */
     void HandleOrientationUpdate(void);
 
+    //CAMERA
+    void FindAprilTags(void);
+
     /* For commanding the lifter servo */
     void SetLifter(uint16_t position);
+
+    //LAB4 stuff
+    void EnterSearch(void);
+    bool CheckSearchComplete(void);
+    void EnterApproach(void);
+    void ApproachUpdate(void);
+    bool CheckApproachComplete(void);
+    
+
 };
