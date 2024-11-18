@@ -236,12 +236,16 @@ void Robot::HandleAprilTag(const AprilTagDatum& tag)
         EnterApproachingState();
     } else if (robotState == ROBOT_APPROACHING) {
         chassis.SetTwist(approachdrivekp * -(70 - tag.h), approachturnkp * -(80 - tag.cx));
+        Serial.print(">Drive:");
+        Serial.println(70 - tag.h);
+        Serial.print(">Turn:");
+        Serial.println(80 - tag.cx);
     }
 
-    if (CheckApproachComplete(5, 5)) {
+    if (CheckApproachComplete(3, 3)) {
         digitalWrite(13, LOW);
-        EnterIdleState();
-        delay(1000);
+        // EnterIdleState();
+        // delay(1000);
     }
 }
 
