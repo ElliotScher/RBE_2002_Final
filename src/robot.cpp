@@ -167,11 +167,10 @@ bool Robot::CheckDeadReckonComplete(void){
     deadReckonTime += millis() - prevTimestamp;
     prevTimestamp = millis();
 
-    if (deadReckonTime > 1500){
-        robotState = ROBOT_IDLE;
+    if (deadReckonTime > 1400){
+        digitalWrite(30, HIGH);
         return true;
     }
-
     return false;
 }
 
@@ -234,75 +233,88 @@ void Robot::HandleIntersection(void)
 
 AprilTagDatum tag;
 bool tagFound = false;
+bool tagLost = false;
+uint16_t lastTagCounter;
 void Robot::FindAprilTags(void)
 {
     if (camera.checkUART(tag) && tag.id == 0) {
         tagFound = true;
-        // Serial.print(F("Tag [cx="));
-        // Serial.print(tag.cx);
-        // Serial.print(F(", cy="));
-        // Serial.print(tag.cy);
-        // Serial.print(F(", w="));
-        // Serial.print(tag.w);
-        // Serial.print(F(", h="));
-        // Serial.print(tag.h);
-        // Serial.print(F(", id="));
-        // Serial.print(tag.id);
-        // Serial.print(F(", rot="));
-        // Serial.print(tag.rot);
-        // Serial.println(F("]"));
+        lastTagCounter = 0;
     } else {
         tagFound = false;
     }
 }
 
+bool callFlag;
+
 void Robot::EnterSearch(void){
     robotState = ROBOT_SEARCHING;
     Serial.println(" -> SEARCHING");
-    chassis.SetTwist(0,1.2);
+    chassis.SetTwist(0,0.7);
     tagFound = false;
+    tagLost = false;
+    callFlag = true;
 }
 
 bool Robot::CheckSearchComplete(void){
     FindAprilTags();
-    return tagFound;
+    if (abs((float) tag.cx - 100.0) < 30){
+        return tagFound;
+    } else {
+        return false;
+    }
 }
 
 void Robot::EnterApproach(void){
     robotState = ROBOT_APPROACHING;
-    Serial.println(" -> APPROACHING"); 
-    chassis.SetTwist(5,0);
+    Serial.println(" -> APPROACHING");
+    digitalWrite(30, LOW);
 }
 
-float KpSpeed = 2, KpTwist = 0.02;
+float KpSpeed = 1, KpTwist = 0.02, KdTwist = 0.08;
 
 void Robot::ApproachUpdate(void){
     FindAprilTags();
-    if (tagFound){
-        float speed = (tag.h - 70.0) * KpSpeed;
-        float twist = (tag.cx - 90.0) * KpTwist;
+    static float prevTwistError = 0;
+    float speed = (tag.h - 65.0) * KpSpeed;
+    float twistError = (float) tag.cx - 100.0;
+    float twist = twistError * KpTwist + (twistError - prevTwistError) * KdTwist;
+    prevTwistError = twistError;
 
-        float maxSpeed = 15.0;
-        float maxTwist = 3.0;
-        
-        if (speed > maxSpeed) {
-            speed = maxSpeed;
-        } else if (speed < -1.0 * maxSpeed) {
-            speed = -1.0 * maxSpeed;
-        }
+    float maxSpeed = 30.0;
+    float maxTwist = 1.5;
 
-        if (twist > maxTwist) {
-            twist = maxTwist;
-        } else if (twist < -1.0 * maxTwist) {
-            twist = -1.0 * maxTwist;
-        }
-
-        chassis.SetTwist(speed, twist);
+    if (speed > maxSpeed) {
+        speed = maxSpeed;
+    } else if (speed < -1.0 * maxSpeed) {
+        speed = -1.0 * maxSpeed;
     }
+
+    if (twist > maxTwist) {
+        twist = maxTwist;
+    } else if (twist < (-1.0 * maxTwist)) {
+        twist = -1.0 * maxTwist;
+    }
+
+    //CHECK FOR LOST TAG
+    lastTagCounter++;
+    if (lastTagCounter > 50){
+        Serial.println("TAG LOST_____________________");
+        tagLost = true;
+    }
+
+    chassis.SetTwist(speed, twist);
+    Serial.print("speed: ");
+    Serial.print(speed);
+    Serial.print("\ttwist: ");
+    Serial.print(twist);
+    Serial.print("\ttagH: ");
+    Serial.println(tag.h);
+
 }
 
 bool Robot::CheckApproachComplete(void){
-    if (tagFound && tag.h >= 55) {
+    if ((tag.h >= 55) || tagLost) {
         return true;
     }
     return false;
@@ -339,14 +351,22 @@ void Robot::RobotLoop(void)
 
         if (robotState == ROBOT_SEARCHING){
             if (CheckSearchComplete()){
+                if (callFlag){
+                    callFlag = false;
+                } else {
                 EnterApproach();
+                }
             }
         }
 
         if (robotState == ROBOT_APPROACHING){
             ApproachUpdate();
             if(CheckApproachComplete()){
-                EnterDeadReckon();
+                if (tagLost){
+                    EnterIdleState();
+                } else {
+                    EnterDeadReckon();
+                }
             }
         }
         chassis.UpdateMotors();
