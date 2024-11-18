@@ -44,7 +44,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
         switch(keyCode)
         {
             case REWIND:
-                EnterLineFollowing(keyString.toInt());
+                EnterSearchingState();
                 keyString = "";
                 break;
             case NUM_1:

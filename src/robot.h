@@ -2,6 +2,8 @@
 #include "chassis.h"
 #include <LineSensor.h>
 #include <LSM6.h>
+#include <apriltagdatum.h>
+#include <openmv.h>
 
 class Robot
 {
@@ -27,7 +29,9 @@ protected:
         ROBOT_IDLE, 
         ROBOT_LINING,
         ROBOT_TURNING,
-        ROBOT_CLIMBING
+        ROBOT_CLIMBING,
+        ROBOT_SEARCHING,
+        ROBOT_APPROACHING
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -68,6 +72,13 @@ protected:
         NORTH, EAST, SOUTH, WEST
     };
     DIRECTION direction = NORTH;
+
+    OpenMV openMV;
+    AprilTagDatum tag;
+
+    float approachturnkp = 0.025;
+    float approachdrivekp = 1;
+    EventTimer approachTimer;
     
 public:
     Robot(void) {keyString.reserve(8);} //reserve some memory to avoid reallocation
@@ -108,4 +119,13 @@ protected:
 
     /* For commanding the lifter servo */
     void SetLifter(uint16_t position);
+
+    /**
+     * For the camera alignment routine
+     */
+    void HandleAprilTag(const AprilTagDatum& tag);
+    void EnterSearchingState(void);
+    void EnterApproachingState(void);
+    bool CheckApproachComplete(int headingTolerance, int distanceTolerance);
+    void HandleTimerStop(void);
 };

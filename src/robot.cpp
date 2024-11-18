@@ -20,6 +20,7 @@ void Robot::InitializeRobot(void)
 
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
+    Serial1.begin(115200);
 }
 
 void Robot::EnterIdleState(void)
@@ -219,6 +220,53 @@ bool Robot::CheckClimbComplete(void) {
     return false;
 }
 
+void Robot::HandleAprilTag(const AprilTagDatum& tag)
+{
+    approachTimer.start(1000);
+    Serial.print("Tag: ");
+    Serial.print(tag.id); Serial.print('\t');
+    Serial.print(tag.cx); Serial.print('\t');
+    Serial.print(tag.cy); Serial.print('\t');
+    Serial.print(tag.h); Serial.print('\t');
+    Serial.print(tag.w); Serial.print('\t');
+    Serial.print(tag.rot); Serial.print('\t');
+    Serial.print('\n');
+
+    if (robotState != ROBOT_APPROACHING) {
+        EnterApproachingState();
+    } else if (robotState == ROBOT_APPROACHING) {
+        chassis.SetTwist(approachdrivekp * -(70 - tag.h), approachturnkp * -(80 - tag.cx));
+    }
+
+    if (CheckApproachComplete(5, 5)) {
+        digitalWrite(13, LOW);
+        EnterIdleState();
+        delay(1000);
+    }
+}
+
+void Robot::HandleTimerStop() {
+    chassis.SetTwist(0, 0);
+}
+
+void Robot::EnterSearchingState(void)
+{
+    Serial.println(" -> SEARCHING");
+    robotState = ROBOT_SEARCHING;
+    chassis.SetTwist(0, 0.5);
+}
+void Robot::EnterApproachingState(void)
+{
+    Serial.println(" -> APPROACHING");
+    robotState = ROBOT_APPROACHING;
+    digitalWrite(13, HIGH);
+}
+
+bool Robot::CheckApproachComplete(int headingTolerance, int distanceTolerance)
+{
+    return tag.h > 70 - distanceTolerance && tag.h < 70 + distanceTolerance && tag.cx > 80 - headingTolerance && tag.cx < 80 + headingTolerance;
+}
+
 void Robot::RobotLoop(void) 
 {
     /**
@@ -255,6 +303,8 @@ void Robot::RobotLoop(void)
     if(lineSensor.CheckIntersection()) HandleIntersection();
     if(CheckTurnComplete()) HandleTurnComplete();
     if(CheckClimbComplete()) HandleClimbComplete();
+    if(openMV.checkUART(tag)) HandleAprilTag(tag);
+    if (approachTimer.checkExpired()) HandleTimerStop();
 
     /**
      * Check for an IMU update
