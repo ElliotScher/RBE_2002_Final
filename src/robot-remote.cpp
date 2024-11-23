@@ -17,7 +17,7 @@ IRDecoder decoder(IR_PIN);
 
 void Robot::HandleKeyCode(int16_t keyCode)
 { 
-    Serial.println(keyCode);
+    // Serial.println(keyCode);
 
     // Regardless of current state, if ENTER is pressed, go to idle state
     if(keyCode == STOP_MODE) EnterIdleState();

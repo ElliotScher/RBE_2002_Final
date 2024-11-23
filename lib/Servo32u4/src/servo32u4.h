@@ -36,8 +36,8 @@
 class Servo32U4Base
 {
 protected:
-    uint16_t usMin = 1000;
-    uint16_t usMax = 2000;
+    uint16_t usMin = 500;
+    uint16_t usMax = 2500;
 
     uint8_t feedbackPin = -1;
     bool isAttached = false;
@@ -63,6 +63,8 @@ public:
     uint16_t setMinMaxMicroseconds(uint16_t min, uint16_t max);
 
     virtual void writeMicroseconds(uint16_t microseconds) = 0;
+
+    bool checkCompleted(void) { return targetPos == currentPos; }
 };
 
 /** \class Servo32U4Pin5

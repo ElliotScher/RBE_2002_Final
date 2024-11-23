@@ -4,6 +4,8 @@
 #include <LSM6.h>
 #include <apriltagdatum.h>
 #include <openmv.h>
+#include <servo32u4.h>
+#include <HX711.h>
 
 class Robot
 {
@@ -31,7 +33,9 @@ protected:
         ROBOT_TURNING,
         ROBOT_CLIMBING,
         ROBOT_SEARCHING,
-        ROBOT_APPROACHING
+        ROBOT_APPROACHING,
+        ROBOT_LIFTING,
+        ROBOT_WEIGHING
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -79,6 +83,10 @@ protected:
     float approachturnkp = 0.025;
     float approachdrivekp = 1;
     EventTimer approachTimer;
+
+    Servo32U4Pin5 servo;
+    HX711<7, 12> amplifier;
+    int32_t amplifierReading;
     
 public:
     Robot(void) {keyString.reserve(8);} //reserve some memory to avoid reallocation
@@ -118,7 +126,9 @@ protected:
     void HandleOrientationUpdate(void);
 
     /* For commanding the lifter servo */
-    void SetLifter(uint16_t position);
+    void SetLifter(uint16_t pulseLengthUS) {servo.setTargetPos(pulseLengthUS);}
+    bool CheckLiftComplete(void);
+    void HandleLiftComplete(void);
 
     /**
      * For the camera alignment routine
@@ -128,4 +138,7 @@ protected:
     void EnterApproachingState(void);
     bool CheckApproachComplete(int headingTolerance, int distanceTolerance);
     void HandleTimerStop(void);
+
+    float getWeight(void) { return (amplifierReading - 579833.678571429) / 659.133857142857; }
+
 };

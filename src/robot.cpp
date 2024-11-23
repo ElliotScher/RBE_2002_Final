@@ -21,6 +21,8 @@ void Robot::InitializeRobot(void)
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
     Serial1.begin(115200);
+
+    servo.attach();
 }
 
 void Robot::EnterIdleState(void)
@@ -244,8 +246,7 @@ void Robot::HandleAprilTag(const AprilTagDatum& tag)
 
     if (CheckApproachComplete(3, 3)) {
         digitalWrite(13, LOW);
-        // EnterIdleState();
-        // delay(1000);
+        robotState = ROBOT_LIFTING;
     }
 }
 
@@ -269,6 +270,15 @@ void Robot::EnterApproachingState(void)
 bool Robot::CheckApproachComplete(int headingTolerance, int distanceTolerance)
 {
     return tag.h > 70 - distanceTolerance && tag.h < 70 + distanceTolerance && tag.cx > 80 - headingTolerance && tag.cx < 80 + headingTolerance;
+}
+
+bool Robot::CheckLiftComplete(void) {
+    return servo.checkCompleted();
+}
+
+void Robot::HandleLiftComplete(void) {
+    robotState = ROBOT_WEIGHING;
+    amplifier.Wakeup();
 }
 
 void Robot::RobotLoop(void) 
@@ -309,6 +319,7 @@ void Robot::RobotLoop(void)
     if(CheckClimbComplete()) HandleClimbComplete();
     if(openMV.checkUART(tag)) HandleAprilTag(tag);
     if (approachTimer.checkExpired()) HandleTimerStop();
+    if (CheckLiftComplete()) HandleLiftComplete();
 
     /**
      * Check for an IMU update
@@ -317,5 +328,13 @@ void Robot::RobotLoop(void)
     {
         HandleOrientationUpdate();
     }
+
+    if (robotState == ROBOT_WEIGHING) {
+        amplifier.GetReading(amplifierReading);
+        Serial.print(getWeight());
+        Serial.println(" grams motherfucker");
+    }
+
+    servo.update();
 }
 
