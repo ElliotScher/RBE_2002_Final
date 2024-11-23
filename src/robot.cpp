@@ -224,33 +224,39 @@ bool Robot::CheckClimbComplete(void) {
 
 void Robot::HandleAprilTag(const AprilTagDatum& tag)
 {
-    approachTimer.start(1000);
-    Serial.print("Tag: ");
-    Serial.print(tag.id); Serial.print('\t');
-    Serial.print(tag.cx); Serial.print('\t');
-    Serial.print(tag.cy); Serial.print('\t');
-    Serial.print(tag.h); Serial.print('\t');
-    Serial.print(tag.w); Serial.print('\t');
-    Serial.print(tag.rot); Serial.print('\t');
-    Serial.print('\n');
+    if (robotState == ROBOT_DEAD_RECKONING || robotState == ROBOT_LIFTING || robotState == ROBOT_WEIGHING) {
+        return;
+    } else {
+        approachTimer.start(1000);
+    }
+    // Serial.print("Tag: ");
+    // Serial.print(tag.id); Serial.print('\t');
+    // Serial.print(tag.cx); Serial.print('\t');
+    // Serial.print(tag.cy); Serial.print('\t');
+    // Serial.print(tag.h); Serial.print('\t');
+    // Serial.print(tag.w); Serial.print('\t');
+    // Serial.print(tag.rot); Serial.print('\t');
+    // Serial.print('\n');
 
     if (robotState != ROBOT_APPROACHING) {
         EnterApproachingState();
     } else if (robotState == ROBOT_APPROACHING) {
-        chassis.SetTwist(approachdrivekp * -(70 - tag.h), approachturnkp * -(80 - tag.cx));
-        Serial.print(">Drive:");
-        Serial.println(70 - tag.h);
-        Serial.print(">Turn:");
-        Serial.println(80 - tag.cx);
+        chassis.SetTwist(approachdrivekp * -(50 - tag.h), approachturnkp * -(80 - tag.cx));
+        // Serial.print(">Drive:");
+        // Serial.println(70 - tag.h);
+        // Serial.print(">Turn:");
+        // Serial.println(80 - tag.cx);
     }
 
     if (CheckApproachComplete(3, 3)) {
+        robotState = ROBOT_DEAD_RECKONING;
         digitalWrite(13, LOW);
-        robotState = ROBOT_LIFTING;
+        deadReckonTimer.start(1000);
+        chassis.SetTwist(-15, 0);
     }
 }
 
-void Robot::HandleTimerStop() {
+void Robot::HandleApproachTimerStop() {
     chassis.SetTwist(0, 0);
 }
 
@@ -265,20 +271,32 @@ void Robot::EnterApproachingState(void)
     Serial.println(" -> APPROACHING");
     robotState = ROBOT_APPROACHING;
     digitalWrite(13, HIGH);
+    servo.setTargetPos(2500);
 }
 
 bool Robot::CheckApproachComplete(int headingTolerance, int distanceTolerance)
 {
-    return tag.h > 70 - distanceTolerance && tag.h < 70 + distanceTolerance && tag.cx > 80 - headingTolerance && tag.cx < 80 + headingTolerance;
+    return tag.h > 50 - distanceTolerance && tag.h < 50 + distanceTolerance && tag.cx > 80 - headingTolerance && tag.cx < 80 + headingTolerance;
 }
 
 bool Robot::CheckLiftComplete(void) {
-    return servo.checkCompleted();
+    if (robotState == ROBOT_LIFTING) {
+        return servo.checkCompleted();
+    }
+    return false;
 }
 
 void Robot::HandleLiftComplete(void) {
     robotState = ROBOT_WEIGHING;
+    Serial.println(" -> WEIGHING");
+    weighTimer.start(1000);
+}
+
+void Robot::HandleDeadReckoningTimerStop(void) {
+    chassis.Stop();
+    servo.setTargetPos(1000);
     amplifier.Wakeup();
+    robotState = ROBOT_LIFTING;
 }
 
 void Robot::RobotLoop(void) 
@@ -318,7 +336,8 @@ void Robot::RobotLoop(void)
     if(CheckTurnComplete()) HandleTurnComplete();
     if(CheckClimbComplete()) HandleClimbComplete();
     if(openMV.checkUART(tag)) HandleAprilTag(tag);
-    if (approachTimer.checkExpired()) HandleTimerStop();
+    if (approachTimer.checkExpired()) HandleApproachTimerStop();
+    if (deadReckonTimer.checkExpired()) HandleDeadReckoningTimerStop();
     if (CheckLiftComplete()) HandleLiftComplete();
 
     /**
@@ -331,8 +350,19 @@ void Robot::RobotLoop(void)
 
     if (robotState == ROBOT_WEIGHING) {
         amplifier.GetReading(amplifierReading);
-        Serial.print(getWeight());
-        Serial.println(" grams motherfucker");
+        Serial.println(amplifierReading);
+        if (amplifierReading != 0) {
+            readingSum += amplifierReading;
+            Serial.println(readingSum);
+            readingCount += 1;
+        }
+        if (readingCount == 10) {
+            Serial.print("Average: ");
+            Serial.println(readingSum / 10.0);
+            readingCount = 0;
+            readingSum = 0;
+            robotState = ROBOT_IDLE;
+        }
     }
 
     servo.update();

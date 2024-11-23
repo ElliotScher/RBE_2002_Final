@@ -26,7 +26,7 @@ bool LineSensor::CheckIntersection(void)
     prevOnIntersection = onIntersection;
 
     if (retVal) {
-        Serial.println("Intersection detected!");
+        // Serial.println("Intersection detected!");
     }
 
     return false;

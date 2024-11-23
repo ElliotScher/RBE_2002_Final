@@ -34,6 +34,7 @@ protected:
         ROBOT_CLIMBING,
         ROBOT_SEARCHING,
         ROBOT_APPROACHING,
+        ROBOT_DEAD_RECKONING,
         ROBOT_LIFTING,
         ROBOT_WEIGHING
     };
@@ -81,12 +82,17 @@ protected:
     AprilTagDatum tag;
 
     float approachturnkp = 0.025;
-    float approachdrivekp = 1;
+    float approachdrivekp = 0.75;
     EventTimer approachTimer;
+    EventTimer deadReckonTimer;
+    EventTimer weighTimer;
 
     Servo32U4Pin5 servo;
     HX711<7, 12> amplifier;
     int32_t amplifierReading;
+
+    int readingCount = 0;
+    float readingSum = 0;
     
 public:
     Robot(void) {keyString.reserve(8);} //reserve some memory to avoid reallocation
@@ -137,8 +143,9 @@ protected:
     void EnterSearchingState(void);
     void EnterApproachingState(void);
     bool CheckApproachComplete(int headingTolerance, int distanceTolerance);
-    void HandleTimerStop(void);
+    void HandleApproachTimerStop(void);
 
-    float getWeight(void) { return (amplifierReading - 579833.678571429) / 659.133857142857; }
+    float getWeight(int num) { return (num + 579833.678571429) / 659.133857142857; }
 
+    void HandleDeadReckoningTimerStop(void);
 };
