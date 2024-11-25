@@ -85,11 +85,12 @@ protected:
     float approachdrivekp = 0.75;
     EventTimer approachTimer;
     EventTimer deadReckonTimer;
-    EventTimer weighTimer;
 
     Servo32U4Pin5 servo;
-    HX711<7, 12> amplifier;
+    HX711<6, 13> amplifier;
     int32_t amplifierReading;
+    int32_t previousAmplifierReading;
+
 
     int readingCount = 0;
     float readingSum = 0;
@@ -145,7 +146,7 @@ protected:
     bool CheckApproachComplete(int headingTolerance, int distanceTolerance);
     void HandleApproachTimerStop(void);
 
-    float getWeight(int num) { return (num + 579833.678571429) / 659.133857142857; }
+    float getWeight() { return ((readingSum / (float)readingCount) + 579833.678571429) / 659.133857142857; }
 
     void HandleDeadReckoningTimerStop(void);
 };

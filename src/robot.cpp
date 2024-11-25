@@ -23,6 +23,7 @@ void Robot::InitializeRobot(void)
     Serial1.begin(115200);
 
     servo.attach();
+    amplifier.Init();
 }
 
 void Robot::EnterIdleState(void)
@@ -229,14 +230,14 @@ void Robot::HandleAprilTag(const AprilTagDatum& tag)
     } else {
         approachTimer.start(1000);
     }
-    // Serial.print("Tag: ");
-    // Serial.print(tag.id); Serial.print('\t');
-    // Serial.print(tag.cx); Serial.print('\t');
-    // Serial.print(tag.cy); Serial.print('\t');
-    // Serial.print(tag.h); Serial.print('\t');
-    // Serial.print(tag.w); Serial.print('\t');
-    // Serial.print(tag.rot); Serial.print('\t');
-    // Serial.print('\n');
+    Serial.print("Tag: ");
+    Serial.print(tag.id); Serial.print('\t');
+    Serial.print(tag.cx); Serial.print('\t');
+    Serial.print(tag.cy); Serial.print('\t');
+    Serial.print(tag.h); Serial.print('\t');
+    Serial.print(tag.w); Serial.print('\t');
+    Serial.print(tag.rot); Serial.print('\t');
+    Serial.print('\n');
 
     if (robotState != ROBOT_APPROACHING) {
         EnterApproachingState();
@@ -288,15 +289,14 @@ bool Robot::CheckLiftComplete(void) {
 
 void Robot::HandleLiftComplete(void) {
     robotState = ROBOT_WEIGHING;
-    Serial.println(" -> WEIGHING");
-    weighTimer.start(1000);
+    Serial.println(" -> WEIGHING");    
 }
 
 void Robot::HandleDeadReckoningTimerStop(void) {
     chassis.Stop();
     servo.setTargetPos(1000);
-    amplifier.Wakeup();
     robotState = ROBOT_LIFTING;
+    // amplifier.Wakeup();
 }
 
 void Robot::RobotLoop(void) 
@@ -351,14 +351,14 @@ void Robot::RobotLoop(void)
     if (robotState == ROBOT_WEIGHING) {
         amplifier.GetReading(amplifierReading);
         Serial.println(amplifierReading);
-        if (amplifierReading != 0) {
+        if (amplifierReading != 0 && previousAmplifierReading != amplifierReading) {
             readingSum += amplifierReading;
             Serial.println(readingSum);
             readingCount += 1;
         }
         if (readingCount == 10) {
             Serial.print("Average: ");
-            Serial.println(readingSum / 10.0);
+            Serial.println(getWeight());
             readingCount = 0;
             readingSum = 0;
             robotState = ROBOT_IDLE;
@@ -366,5 +366,6 @@ void Robot::RobotLoop(void)
     }
 
     servo.update();
+    previousAmplifierReading = amplifierReading;
 }
 

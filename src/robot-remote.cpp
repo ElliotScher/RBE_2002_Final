@@ -17,7 +17,7 @@ IRDecoder decoder(IR_PIN);
 
 void Robot::HandleKeyCode(int16_t keyCode)
 { 
-    // Serial.println(keyCode);
+    Serial.println(keyCode);
 
     // Regardless of current state, if ENTER is pressed, go to idle state
     if(keyCode == STOP_MODE) EnterIdleState();
@@ -92,7 +92,8 @@ void Robot::HandleKeyCode(int16_t keyCode)
         switch(keyCode)
         {
             case UP_ARROW:
-                chassis.SetTwist(25, 0);
+                // chassis.SetTwist(25, 0);
+                robotState = ROBOT_SEARCHING;
                 break;
             case RIGHT_ARROW:
                 chassis.SetTwist(0, -0.25);
