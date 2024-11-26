@@ -36,8 +36,8 @@
 class Servo32U4Base
 {
 protected:
-    uint16_t usMin = 1000;
-    uint16_t usMax = 2000;
+    uint16_t usMin = 0;
+    uint16_t usMax = 4000;
 
     uint8_t feedbackPin = -1;
     bool isAttached = false;

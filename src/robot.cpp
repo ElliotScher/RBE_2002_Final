@@ -1,6 +1,7 @@
 #include "robot.h"
 #include <IRdecoder.h>
 #include <openmv.h>
+#include <HX711.h>
 
 
 void Robot::InitializeRobot(void)
@@ -26,6 +27,10 @@ void Robot::InitializeRobot(void)
     // The line sensor elements default to INPUTs, but we'll initialize anyways, for completeness
     lineSensor.Initialize();
 
+    servo.attach();
+
+    loadCell.Init();
+    loadCell.SetGain(1);
 }
 
 void Robot::EnterIdleState(void)
@@ -62,9 +67,9 @@ bool Robot::CheckTurnComplete(void)
 
 void Robot::HandleTurnComplete(void)
 {
-    chassis.SetWheelSpeeds(0,0);
+    EnterLining(10);
     currDirection = targetDirection;
-    robotState = ROBOT_IDLE;
+    robotState = ROBOT_LINING;
 }
 
 float accelBiasX, accelBiasY, accelBiasZ, zetaAccel = 0.9;
@@ -131,29 +136,48 @@ void Robot::LiningUpdate(void)
 
         chassis.SetTwist(baseSpeed, turnEffort);
 
-        if (!onAngle){
-            if(correctionPitchAngle < angleThreshold - hysteresisBand){
-                onAngle = true;
-                Serial.println("ON ANGLE \n\n\n\n\n\n\n\n\n\n");
-                digitalWrite(30, LOW);
-            }
-        } else {
-            if(correctionPitchAngle > angleThreshold + hysteresisBand){
-                onAngle = false;
-                Serial.println("ON FLAT \n\n\n\n\n\n\n\n\n\n");
-                targetDirection = 2;
-                EnterTurn();
-                digitalWrite(30, HIGH);
-            }
-        }
-        Serial.print("pitch: ");
-        Serial.println(correctionPitchAngle);
+        // if (!onAngle){
+        //     if(correctionPitchAngle < angleThreshold - hysteresisBand){
+        //         onAngle = true;
+        //         Serial.println("ON ANGLE \n\n\n\n\n\n\n\n\n\n");
+        //         digitalWrite(30, LOW);
+        //     }
+        // } else {
+        //     if(correctionPitchAngle > angleThreshold + hysteresisBand){
+        //         onAngle = false;
+        //         Serial.println("ON FLAT \n\n\n\n\n\n\n\n\n\n");
+        //         targetDirection = 2;
+        //         EnterTurn();
+        //         digitalWrite(30, HIGH);
+        //     }
+        // }
+        // Serial.print("pitch: ");
+        // Serial.println(correctionPitchAngle);
 
-        prevCorrected = correctionPitchAngle;
+        // prevCorrected = correctionPitchAngle;
     }
 }
 
 float deadReckonTime, prevTimestamp;
+
+void Robot::EnterCentering(void){
+    robotState = ROBOT_CENTERING;
+    Serial.println(" -> CENTERING");
+    chassis.SetTwist(10,0);
+    deadReckonTime = 0;
+    prevTimestamp = millis();
+}
+
+bool Robot::CheckCenteringComplete(void){
+    deadReckonTime += millis() - prevTimestamp;
+    prevTimestamp = millis();
+
+    if (deadReckonTime > 1000){
+        chassis.Stop();
+        return true;
+    }
+    return false;
+}
 
 void Robot::EnterDeadReckon(void){
     robotState = ROBOT_DEAD_RECKONING;
@@ -167,15 +191,15 @@ bool Robot::CheckDeadReckonComplete(void){
     deadReckonTime += millis() - prevTimestamp;
     prevTimestamp = millis();
 
-    if (deadReckonTime > 1400){
-        digitalWrite(30, HIGH);
+    if (deadReckonTime > 1000){
+        chassis.Stop();
         return true;
     }
     return false;
 }
 
 int currentI = 0, currentJ = 0;
-int targetI = 200, targetJ = 0;
+int targetI = 2, targetJ = 2;
 bool reverseMode = false;
 
 void Robot::SetTargetI(int i){
@@ -199,22 +223,23 @@ void Robot::HandleIntersection(void)
             currentI++;
             if (currentI >= targetI && currentJ >= targetJ) {
                 targetDirection = 2; //turn to west
-                EnterDeadReckon();
+                EnterCentering();
                 reverseMode = true;
             } else if (currentI >= targetI) {
                 targetDirection = 1; //turn to north
-                EnterDeadReckon();    
+                EnterCentering();    
             }               
         } else { //north
             currentJ++;
             if (currentI >= targetI && currentJ >= targetJ) {
-                targetDirection = 3; // turn to south
-                EnterDeadReckon();
-                reverseMode = true;
+                EnterSearch();       
+                // targetDirection = 3; // turn to south
+                // EnterCentering();
+                // reverseMode = true;
             }                   
         }
     } else {
-        // Reverse mode logic       
+        // Reverse mode logic
         if (currDirection == 2) { // west
             currentI--;  
             if (currentI <= 0 && currentJ <= 0) {
@@ -237,7 +262,7 @@ bool tagLost = false;
 uint16_t lastTagCounter;
 void Robot::FindAprilTags(void)
 {
-    if (camera.checkUART(tag) && tag.id == 0) {
+    if (camera.checkUART(tag)) {
         tagFound = true;
         lastTagCounter = 0;
     } else {
@@ -281,7 +306,7 @@ void Robot::ApproachUpdate(void){
     float twist = twistError * KpTwist + (twistError - prevTwistError) * KdTwist;
     prevTwistError = twistError;
 
-    float maxSpeed = 30.0;
+    float maxSpeed = 10.0;
     float maxTwist = 1.5;
 
     if (speed > maxSpeed) {
@@ -320,6 +345,87 @@ bool Robot::CheckApproachComplete(void){
     return false;
 }
 
+void Robot::SetLifter(uint16_t position){
+    servo.setTargetPos(position);
+    Serial.println("NEW TARGET: " + (String) position);
+}
+
+void Robot::EnterLifting(void){
+    servo.setTargetPos(800);
+    robotState = ROBOT_LIFTING;
+    Serial.println("-> LIFTING");
+    deadReckonTime = 0;
+    prevTimestamp = millis();
+}
+
+bool Robot::CheckLiftComplete(void){
+    deadReckonTime += millis() - prevTimestamp;
+    prevTimestamp = millis();
+
+    if (deadReckonTime > 1500){
+        return true;
+    }
+    return false;
+}
+
+void Robot::EnterLowering(void){
+    servo.setTargetPos(3200);
+    robotState = ROBOT_LOWERING;
+    Serial.println("-> LOWERING");
+    deadReckonTime = 0;
+    prevTimestamp = millis();
+}
+
+bool Robot::CheckLowerComplete(void){
+    deadReckonTime += millis() - prevTimestamp;
+    prevTimestamp = millis();
+
+    if (deadReckonTime > 1500){
+        return true;
+    }
+    return false;
+}
+
+float weighingTime;
+int weighCounter;
+float liftedWeight;
+float sum;
+
+void Robot::EnterWeighing(void){
+    robotState = ROBOT_WEIGHING;
+    Serial.println("-> WEIGHING");
+    weighCounter = 0;
+    sum = 0;
+    weighingTime = 0;
+    prevTimestamp = millis();
+}
+
+int32_t reading, prevReading;
+
+void Robot::WeighUpdate(void){
+    weighingTime += millis() - prevTimestamp;
+    prevTimestamp = millis();
+
+    if (loadCell.GetReading(reading)  && reading != prevReading) {
+        //float singleMeasurement = (0.001429 * (float) reading) + 268.6;
+        float singleMeasurement = ((float) reading + 579834) / 659.134;
+        Serial.print("Measuring... ");
+        Serial.println(singleMeasurement);
+        sum += singleMeasurement;
+        weighCounter++;
+    }
+    prevReading = reading;
+}
+
+bool Robot::CheckWeighComplete(){
+    if (weighCounter >= 25){
+        liftedWeight = sum / weighCounter;
+        Serial.println("DONE WEIGHING, Tag ID " + (String) tag.id  + " user charged for " + (String) liftedWeight + "grams of trash.");
+        return true;
+    }
+    return false;
+}
+
 void Robot::RobotLoop(void) 
 {
     //IR REMOTE KEY PRESSES
@@ -343,9 +449,15 @@ void Robot::RobotLoop(void)
             }
         }
 
+        if (robotState == ROBOT_CENTERING){
+            if(CheckCenteringComplete()){
+                EnterTurn();
+            }
+        }
+
         if (robotState == ROBOT_DEAD_RECKONING){
             if(CheckDeadReckonComplete()){
-                EnterIdleState();
+                EnterLifting();
             }
         }
 
@@ -369,9 +481,30 @@ void Robot::RobotLoop(void)
                 }
             }
         }
+
+        if (robotState == ROBOT_LIFTING){
+            servo.update();
+            if (CheckLiftComplete()){
+                EnterWeighing();
+            }
+        }
+
+        if (robotState == ROBOT_LOWERING){
+            servo.update();
+            if (CheckLowerComplete()){
+                EnterLining(10);
+            }
+        }
+
+        if (robotState == ROBOT_WEIGHING){
+            WeighUpdate();
+            if(CheckWeighComplete()){
+                EnterIdleState();
+            }
+        }
+
         chassis.UpdateMotors();
     }
-
     //CHECK IMU
     if(imu.checkForNewData()) HandleOrientationUpdate();
 }

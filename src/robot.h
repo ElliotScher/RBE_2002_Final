@@ -3,6 +3,8 @@
 #include <LineSensor.h>
 #include <LSM6.h>
 #include <openmv.h>
+#include <servo32u4.h>
+#include <HX711.h>
 
 class Robot
 {
@@ -31,6 +33,10 @@ protected:
         ROBOT_DEAD_RECKONING,
         ROBOT_SEARCHING,
         ROBOT_APPROACHING,
+        ROBOT_LIFTING,
+        ROBOT_LOWERING,
+        ROBOT_WEIGHING,
+        ROBOT_CENTERING,
     };
     ROBOT_STATE robotState = ROBOT_IDLE;
 
@@ -42,6 +48,14 @@ protected:
 
     /* To add later: rangefinder, camera, etc.*/
     OpenMV camera;
+
+    //Servo
+    Servo32U4Pin5 servo;
+
+    //Load cell
+    static const uint8_t HX711_CLK_PIN = 6;
+    static const uint8_t HX711_DAT_PIN = 13;
+    HX711<HX711_CLK_PIN, HX711_DAT_PIN> loadCell;
 
     // For managing key presses
     String keyString;
@@ -121,6 +135,17 @@ protected:
     void EnterApproach(void);
     void ApproachUpdate(void);
     bool CheckApproachComplete(void);
-    
 
+    void EnterLifting(void);
+    bool CheckLiftComplete(void);
+
+    void EnterLowering(void);
+    bool CheckLowerComplete(void);
+
+    void EnterWeighing(void);
+    void WeighUpdate(void);
+    bool CheckWeighComplete(void);
+
+    void EnterCentering(void);
+    bool CheckCenteringComplete(void);
 };

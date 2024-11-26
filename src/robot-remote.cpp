@@ -69,7 +69,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
             case UP_ARROW:
                 break;
             case DOWN_ARROW:
-                EnterSearch();
+                EnterLowering();
                 break;
         }
     }
@@ -98,9 +98,16 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 break;
             case VOLminus:
                 EnterDeadReckon();
-                Serial.print("yippee");
                 break;
-            
+            case NUM_1:
+                EnterLifting();
+                break;
+            case NUM_2:     
+                EnterLowering();   
+                break;
+            case NUM_3:
+                EnterWeighing();
+                break;
         }
     }
 
