@@ -25,7 +25,16 @@ protected:
      * robotState is used to track the current task of the robot. You will add new states as 
      * the term progresses.
      */
-    enum ROBOT_STATE 
+
+    enum ROBOT_SUPERSTATE 
+    {
+        ROBOT_NAV,
+        ROBOT_COLLECT,
+        ROBOT_DELIVER,
+    };
+    ROBOT_SUPERSTATE robotState = ROBOT_NAV;
+
+    enum ROBOT_SUBSTATE 
     {
         ROBOT_IDLE, 
         ROBOT_LINING,
@@ -38,7 +47,7 @@ protected:
         ROBOT_WEIGHING,
         ROBOT_CENTERING,
     };
-    ROBOT_STATE robotState = ROBOT_IDLE;
+    ROBOT_SUBSTATE robotState = ROBOT_IDLE;
 
     /* Define the chassis*/
     Chassis chassis;
@@ -132,6 +141,7 @@ protected:
     //LAB4 stuff
     void EnterSearch(void);
     bool CheckSearchComplete(void);
+
     void EnterApproach(void);
     void ApproachUpdate(void);
     bool CheckApproachComplete(void);

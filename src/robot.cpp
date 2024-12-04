@@ -114,7 +114,6 @@ void Robot::EnterLining(float speed)
     Serial.println(" -> LINING"); 
     baseSpeed = speed; 
     robotState = ROBOT_LINING;
-
 }
 
 float KpLine = 0.0008;
@@ -127,12 +126,10 @@ void Robot::LiningUpdate(void)
 {
     if(robotState == ROBOT_LINING) 
     {
-        // TODO: calculate the error in CalcError(), calc the effort, and update the motion
         int16_t lineError = lineSensor.CalcError();
         float deltaLineError = lineError - prevLineError;
         float turnEffort = KpLine*lineError + KdLine*deltaLineError;
         prevLineError = lineError;
-        //Serial.println(turnEffort);
 
         chassis.SetTwist(baseSpeed, turnEffort);
 
