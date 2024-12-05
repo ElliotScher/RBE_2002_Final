@@ -28,11 +28,12 @@ protected:
 
     enum ROBOT_SUPERSTATE 
     {
-        ROBOT_NAV,
-        ROBOT_COLLECT,
-        ROBOT_DELIVER,
+        ROBOT_NAVIGATING,
+        ROBOT_COLLECTING,
+        ROBOT_DELIVERING,
+        ROBOT_SUPER_IDLE
     };
-    ROBOT_SUPERSTATE robotState = ROBOT_NAV;
+    ROBOT_SUPERSTATE robotSuperState = ROBOT_SUPER_IDLE;
 
     enum ROBOT_SUBSTATE 
     {
@@ -46,8 +47,9 @@ protected:
         ROBOT_LOWERING,
         ROBOT_WEIGHING,
         ROBOT_CENTERING,
+        ROBOT_RETURNING,
     };
-    ROBOT_SUBSTATE robotState = ROBOT_IDLE;
+    ROBOT_SUBSTATE robotSubState = ROBOT_IDLE;
 
     /* Define the chassis*/
     Chassis chassis;
@@ -109,6 +111,11 @@ protected:
     void EnterAutoMode(void);
     void EnterSetupMode(void);
 
+    //SUPERSTATES
+    void EnterNav(void);
+    void EnterCollect(void);
+    void EnterDeliver(void);
+
     /**
      * Line following and navigation routines.
      */
@@ -119,7 +126,7 @@ protected:
     bool CheckIntersection(void) {return lineSensor.CheckIntersection();}
     void HandleIntersection(void);
 
-    void EnterTurn(void);
+    void EnterTurn(int8_t target);
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
 
@@ -158,4 +165,9 @@ protected:
 
     void EnterCentering(void);
     bool CheckCenteringComplete(void);
+    void HandleCenteringComplete(void);
+
+    void EnteringReturning(void);
+    bool CheckReturningComplete(void);
+    void HandleReturningComplete(void);
 };

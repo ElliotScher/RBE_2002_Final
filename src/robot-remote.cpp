@@ -45,6 +45,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
         {
             case REWIND:
                 //EnterLineFollowing(keyString.toInt());
+                EnterNav();
                 EnterLining(10);
                 keyString += (char)(keyCode + 34);
                 break;
@@ -67,6 +68,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 keyString += '0';
                 break;
             case UP_ARROW:
+                EnterSearch();
                 break;
             case DOWN_ARROW:
                 EnterLowering();
@@ -148,7 +150,6 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 chassis.SetWheelSpeeds(0, 0);
                 break;
             case NUM_1:
-                EnterTurn();
                 break;
             case NUM_2:
                 break;

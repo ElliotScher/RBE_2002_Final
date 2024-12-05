@@ -1,6 +1,6 @@
 #include "LineSensor.h"
 
-#define LIGHT_THRESHOLD 600;
+#define LIGHT_THRESHOLD 750;
 
 void LineSensor::Initialize(void)
 {
@@ -40,18 +40,18 @@ bool LineSensor::CheckIntersection(void)
     // Serial.print("\t CURRENT: ");
     // Serial.println("\t"+ (String) onIntersection);
 
-    // Serial.print("\t LEFT1: ");
-    // Serial.print(analogRead(lineSenor1Pin));
-    // Serial.print("\t LEFT2: ");
-    // Serial.print(analogRead(lineSenor2Pin));
-    // Serial.print("\t LEFT3: ");
-    // Serial.print(analogRead(lineSenor3Pin));
-    // Serial.print("\t RIGHT4: ");
-    // Serial.print(analogRead(lineSenor4Pin));
-    // Serial.print("\t RIGHT5: ");
-    // Serial.print(analogRead(lineSenor5Pin));
-    // Serial.print("\t RIGHT6: ");
-    // Serial.println(analogRead(lineSenor6Pin));
+    Serial.print("\t LEFT1: ");
+    Serial.print(analogRead(lineSenor1Pin));
+    Serial.print("\t LEFT2: ");
+    Serial.print(analogRead(lineSenor2Pin));
+    Serial.print("\t LEFT3: ");
+    Serial.print(analogRead(lineSenor3Pin));
+    Serial.print("\t RIGHT4: ");
+    Serial.print(analogRead(lineSenor4Pin));
+    Serial.print("\t RIGHT5: ");
+    Serial.print(analogRead(lineSenor5Pin));
+    Serial.print("\t RIGHT6: ");
+    Serial.println(analogRead(lineSenor6Pin));
 
     if(onIntersection && !prevOnIntersection) {
         Serial.println("\nNEW INTERSECTION!");       
