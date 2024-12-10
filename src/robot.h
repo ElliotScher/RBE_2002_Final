@@ -28,11 +28,12 @@ protected:
 
     enum ROBOT_SUPERSTATE 
     {
-        ROBOT_NAV,
-        ROBOT_COLLECT,
-        ROBOT_DELIVER,
+        ROBOT_NAVIGATING,
+        ROBOT_COLLECTING,
+        ROBOT_DELIVERING,
+        ROBOT_SUPER_IDLE
     };
-    ROBOT_SUPERSTATE robotState = ROBOT_NAV;
+    ROBOT_SUPERSTATE robotSuperState = ROBOT_SUPER_IDLE;
 
     enum ROBOT_SUBSTATE 
     {
@@ -46,8 +47,11 @@ protected:
         ROBOT_LOWERING,
         ROBOT_WEIGHING,
         ROBOT_CENTERING,
+        ROBOT_RETURNING,
+        ROBOT_CLIMBING,
+        ROBOT_DESCENDING
     };
-    ROBOT_SUBSTATE robotState = ROBOT_IDLE;
+    ROBOT_SUBSTATE robotSubState = ROBOT_IDLE;
 
     /* Define the chassis*/
     Chassis chassis;
@@ -83,6 +87,13 @@ protected:
     /* baseSpeed is used to drive at a given speed while, say, line following.*/
     float baseSpeed = 0;
 
+    bool hasBucket;
+    int deadReckoningMillis;
+    int centeringMillis;
+
+    int currentI = 0, currentJ = 0;
+    int targetI = 2, targetJ = 0;
+
     /**
      * For tracking the motion of the Romi. We keep track of the intersection we came
      * from and the one we're headed to. You'll program in the map in handleIntersection()
@@ -98,20 +109,23 @@ public:
     void RobotLoop(void);
 
 protected:
-    /* For managing IR remote key presses*/
+    //IR REMOTE
     void HandleKeyCode(int16_t keyCode);
 
-    /* State changes */    
+    //IDLE STATE   
     void EnterIdleState(void);
 
-    /* Mode changes */
+    //Mode changes
     void EnterTeleopMode(void);
     void EnterAutoMode(void);
     void EnterSetupMode(void);
 
-    /**
-     * Line following and navigation routines.
-     */
+    //SUPERSTATES
+    void EnterNav(void);
+    void EnterCollect(void);
+    void EnterDeliver(void);
+
+    //Line following and navigation routines.
     void EnterLining(float speed);
     void LiningUpdate(void);
     
@@ -119,14 +133,14 @@ protected:
     bool CheckIntersection(void) {return lineSensor.CheckIntersection();}
     void HandleIntersection(void);
 
-    void EnterTurn(void);
+    void EnterTurn(int8_t target);
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
 
     void SetTargetI(int i);
     void SetTargetJ(int j);
     
-    void EnterDeadReckon(void);
+    void EnterDeadReckon(int milliseconds);
     bool CheckDeadReckonComplete(void);
 
     /* IMU routines */
@@ -138,7 +152,7 @@ protected:
     /* For commanding the lifter servo */
     void SetLifter(uint16_t position);
 
-    //LAB4 stuff
+    //NEW STATES
     void EnterSearch(void);
     bool CheckSearchComplete(void);
 
@@ -156,6 +170,23 @@ protected:
     void WeighUpdate(void);
     bool CheckWeighComplete(void);
 
-    void EnterCentering(void);
+    void EnterCentering(int milliseconds);
     bool CheckCenteringComplete(void);
+    void HandleCenteringComplete(void);
+
+    void EnterReturning(void);
+    bool CheckReturningComplete(void);
+    void HandleReturningComplete(void);
+
+    void ResetCurrents(void);
+
+    void EnterClimbing(void);
+    void ClimbingUpdate(void);
+    bool CheckClimbingComplete(void);
+    void HandleClimbingComplete(void);
+
+    void EnterDescending(void);
+    void DescendUpdate(void);
+    bool CheckDescendComplete(void);
+    void HandleDescendComplete(void);
 };
