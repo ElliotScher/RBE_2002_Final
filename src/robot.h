@@ -5,6 +5,7 @@
 #include <openmv.h>
 #include <servo32u4.h>
 #include <HX711.h>
+#include <Romi32U4Buzzer.h>
 
 class Robot
 {
@@ -65,6 +66,9 @@ protected:
     //Servo
     Servo32U4Pin5 servo;
 
+    //buzzer
+    PololuBuzzer buzzer;
+
     //Load cell
     static const uint8_t HX711_CLK_PIN = 6;
     static const uint8_t HX711_DAT_PIN = 13;
@@ -93,6 +97,8 @@ protected:
 
     int currentI = 0, currentJ = 0;
     int targetI = 2, targetJ = 0;
+
+    int destination = 3;
 
     /**
      * For tracking the motion of the Romi. We keep track of the intersection we came
@@ -134,6 +140,7 @@ protected:
     void HandleIntersection(void);
 
     void EnterTurn(int8_t target);
+    void TurnUpdate(void);
     bool CheckTurnComplete(void);
     void HandleTurnComplete(void);
 
@@ -171,10 +178,12 @@ protected:
     bool CheckWeighComplete(void);
 
     void EnterCentering(int milliseconds);
+    void CenteringUpdate(void);
     bool CheckCenteringComplete(void);
     void HandleCenteringComplete(void);
 
     void EnterReturning(void);
+    void ReturnUpdate(void);
     bool CheckReturningComplete(void);
     void HandleReturningComplete(void);
 
@@ -189,4 +198,7 @@ protected:
     void DescendUpdate(void);
     bool CheckDescendComplete(void);
     void HandleDescendComplete(void);
+
+    void BuzzerUpdate(void);
+    void PlayTone(int);
 };

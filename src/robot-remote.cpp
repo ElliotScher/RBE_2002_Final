@@ -7,6 +7,7 @@
 
 #include <ir_codes.h>
 #include <IRdecoder.h>
+#include <Romi32U4Buzzer.h>
 
 /**
  * IRDecoder decoder is declared extern in IRdecoder.h (for ISR purposes), 
@@ -69,15 +70,19 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 keyString += '0';
                 break;
             case UP_ARROW:
-                EnterSearch();
+                EnterLifting();
                 break;
             case DOWN_ARROW:
                 EnterLowering();
                 break;
             case RIGHT_ARROW:
-                ResetCurrents();
-                EnterNav();
-                EnterLining(10);
+                EnterTurn(0);
+                break;
+            case LEFT_ARROW:
+                EnterTurn(2);
+                break;
+            case ENTER_SAVE:
+                break;
         }
     }
 
@@ -107,6 +112,7 @@ void Robot::HandleKeyCode(int16_t keyCode)
                 EnterDeadReckon(1500);
                 break;
             case NUM_1:
+                EnterCollect();
                 EnterLifting();
                 break;
             case NUM_2:     
